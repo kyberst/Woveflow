@@ -1,96 +1,95 @@
-# Woveflow - Editor Web Moderno
+# Woveflow - Modern Web Editor
 
-Woveflow es un editor web WYSIWYG (Lo que ves es lo que obtienes) altamente interactivo y moderno, construido con React y TypeScript. Permite a los usuarios crear y diseñar páginas web visualmente con una interfaz de arrastrar y soltar, previsualizaciones de diseño responsivo y potentes herramientas de edición, incluida la generación de contenido impulsada por IA con la API de Gemini de Google.
+Woveflow is a highly interactive, modern WYSIWYG (What You See Is What You Get) web editor built with React and TypeScript. It allows users to visually create and design web pages with a drag-and-drop interface, responsive design previews, and powerful editing tools, including AI-powered content generation with Google's Gemini API.
 
-## ✨ Características Principales
+## ✨ Key Features
 
-- **Interfaz Visual de Arrastrar y Soltar**: Construye páginas añadiendo y organizando componentes visualmente.
-- **Edición de Texto en Línea**: Haz doble clic en cualquier elemento de texto para editarlo directamente en el lienzo con una barra de herramientas flotante.
-- **Redimensión y Movimiento de Elementos**: Redimensiona y reposiciona elementos fácilmente con manejadores interactivos.
-- **Previsualización de Diseño Responsivo**: Cambia instantáneamente entre las vistas de escritorio, tableta y móvil.
-- **Generación de Contenido con IA**: Utiliza la API de Gemini para generar o modificar contenido HTML basado en indicaciones de texto.
-- **Arquitectura Basada en Componentes**: Utiliza componentes predefinidos para la estructura, elementos básicos y widgets.
-- **Guardar y Reutilizar Componentes Personalizados**: Guarda cualquier elemento como un componente reutilizable para un uso futuro.
-- **Inspector de Elementos Detallado**: Ajusta el contenido, los estilos (CSS) y las propiedades avanzadas (visibilidad, animaciones) para cada elemento.
-- **Internacionalización (i18n)**: Soporte para múltiples idiomas (Inglés y Español ya implementados).
-- **Historial de Deshacer/Rehacer**: Navega fácilmente a través del historial de cambios.
-- **Manejo Seguro de HTML**: Utiliza DOMPurify para prevenir ataques XSS.
+- **Visual Drag-and-Drop Interface**: Build pages by visually adding and arranging components.
+- **Inline Text Editing**: Double-click any text element to edit it directly on the canvas with a floating toolbar.
+- **Element Resizing & Moving**: Easily resize and reposition elements with interactive handlers.
+- **Responsive Design Preview**: Instantly switch between desktop, tablet, and mobile views.
+- **AI-Powered Content Generation**: Use the Gemini API to generate or modify HTML content based on text prompts.
+- **Component-Based Architecture**: Utilize pre-defined components for structure, basic elements, and widgets.
+- **Save & Reuse Custom Components**: Save any element as a reusable component for future use.
+- **Detailed Element Inspector**: Fine-tune content, styles (CSS), and advanced properties (visibility, animations) for each element.
+- **Internationalization (i18n)**: Support for multiple languages (English and Spanish already implemented).
+- **Undo/Redo History**: Easily navigate through the change history.
+- **Secure HTML Handling**: Utilizes DOMPurify to prevent XSS attacks.
 
-## 🚀 Pila Tecnológica
+## 🚀 Tech Stack
 
 - **Frontend**: React, TypeScript
-- **Estilos**: Tailwind CSS
-- **IA Generativa**: API de Gemini de Google (`@google/genai`)
-- **Enrutamiento**: `react-router-dom`
-- **Internacionalización**: `i18next` y `react-i18next`
-- **Seguridad**: `dompurify`
+- **Styling**: Tailwind CSS
+- **Generative AI**: Google Gemini API (`@google/genai`)
+- **Routing**: `react-router-dom`
+- **Internationalization**: `i18next` & `react-i18next`
+- **Security**: `dompurify`
 
-## 📂 Estructura del Proyecto
+## 📂 Project Structure
 
-El proyecto está organizado en una estructura modular para facilitar el mantenimiento y la escalabilidad.
+The project is organized in a modular structure for easy maintenance and scalability.
 
 ```
 /
-├── components/         # Componentes de React, organizados por característica (editor, layout, etc.)
-├── constants.ts        # Constantes de la aplicación (listas de componentes, páginas iniciales, etc.)
-├── context/            # Contexto de React para la gestión del estado global (EditorContext)
-├── hooks/              # Hooks personalizados (useEditor, useEditorReducer)
-├── i18n/               # Configuración de internacionalización y archivos de traducción
-├── index.html          # El punto de entrada HTML
-├── index.tsx           # El punto de entrada de React
-├── pages/              # Componentes de página de nivel superior
-├── services/           # Servicios para APIs externas (Gemini, seguridad)
-├── styles/             # Estilos CSS globales
-└── types.ts            # Definiciones de tipos de TypeScript
+├── components/         # React components, organized by feature (editor, layout, etc.)
+├── constants.ts        # Application constants (component lists, initial pages, etc.)
+├── context/            # React Context for global state management (EditorContext)
+├── hooks/              # Custom hooks (useEditor, useEditorReducer)
+├── i18n/               # Internationalization config and translation files
+├── index.html          # The HTML entry point
+├── index.tsx           # The React entry point
+├── pages/              # Top-level page components
+├── services/           # Services for external APIs (Gemini, security)
+├── styles/             # Global CSS styles
+└── types.ts            # TypeScript type definitions
 ```
 
-## 🛠️ Instalación y Configuración
+## 🛠️ Installation & Setup
 
-Este proyecto utiliza un `importmap` en `index.html` para gestionar las dependencias, por lo que no se requiere un paso tradicional de `npm install`.
+This project uses an `importmap` in `index.html` to manage dependencies, so a traditional `npm install` step is not required.
 
-1.  **Clonar el Repositorio**
+1.  **Clone the Repository**
     ```bash
-    git clone <URL_DEL_REPOSITORIO>
+    git clone <REPOSITORY_URL>
     cd woveflow
     ```
 
-2.  **Configurar la Clave de API de Gemini**
-    - Woveflow utiliza la API de Gemini de Google para la generación de contenido con IA. Debes proporcionar tu propia clave de API.
-    - El proyecto espera que la clave de API esté disponible como una variable de entorno (`process.env.API_KEY`). En un entorno de desarrollo local o en una plataforma como Codepen/Glitch, asegúrate de que esta variable de entorno esté configurada.
+2.  **Set up Gemini API Key**
+    - Woveflow uses the Google Gemini API for AI content generation. You must provide your own API key.
+    - The project expects the API key to be available as an environment variable (`process.env.API_KEY`). In a local development environment or a platform like Codepen/Glitch, ensure this environment variable is configured.
 
-3.  **Ejecutar el Proyecto**
-    - Debido a que el proyecto utiliza módulos ES6, necesita ser servido por un servidor web local para funcionar correctamente (abrir `index.html` directamente desde el sistema de archivos no funcionará).
-    - La forma más fácil es usar una extensión de servidor en vivo para tu editor de código, como **Live Server** para VS Code.
-    - Haz clic derecho en `index.html` y selecciona "Abrir con Live Server".
+3.  **Run the Project**
+    - Because the project uses ES6 modules, it needs to be served by a local web server to function correctly (opening `index.html` directly from the filesystem will not work).
+    - The easiest way is to use a live server extension for your code editor, such as **Live Server** for VS Code.
+    - Right-click on `index.html` and select "Open with Live Server".
 
-## 🌊 Flujo del Proyecto
+## 🌊 Project Flow
 
-Woveflow opera en un flujo de estado unidireccional gestionado por un reductor de React, con el lienzo de edición principal renderizado dentro de un `iframe` para aislar los estilos y scripts.
+Woveflow operates on a unidirectional state flow managed by a React reducer, with the main editing canvas rendered inside an `iframe` to isolate styles and scripts.
 
-1.  **Inicialización**:
-    - `index.tsx` renderiza el componente `App`, que está envuelto en el `EditorProvider`.
-    - `EditorProvider` inicializa el estado global usando `useReducer` con `editorReducer` y lo pone a disposición de toda la aplicación a través del `EditorContext`.
+1.  **Initialization**:
+    - `index.tsx` renders the `App` component, which is wrapped in the `EditorProvider`.
+    - `EditorProvider` initializes the global state using `useReducer` with the `editorReducer` and makes it available to the entire app via `EditorContext`.
 
-2.  **Gestión del Estado**:
-    - El hook `useEditorReducer` contiene toda la lógica para modificar el estado de la aplicación. Responde a `Actions` despachadas desde varios componentes.
-    - El estado incluye la página actual, el contenido, el elemento seleccionado, el historial de deshacer, los modos de visualización y la visibilidad de los modales.
-    - El hook `useEditor` proporciona una forma sencilla para que los componentes accedan al estado y a la función `dispatch`.
+2.  **State Management**:
+    - The `useEditorReducer` hook contains all the logic for modifying the application state. It responds to `Actions` dispatched from various components.
+    - The state includes the current page, content, selected element, undo history, view modes, and modal visibility.
+    - The `useEditor` hook provides a simple way for components to access the state and the `dispatch` function.
 
-3.  **El Lienzo del Editor (`iframe`)**:
-    - El componente `EditorCanvas` renderiza un `iframe`. El contenido HTML de la página actual se inyecta en el `srcDoc` del iframe.
-    - El hook **`useIframeBridge`** es el núcleo de la interactividad. Se ejecuta después de que el iframe se carga y:
-        - Añade un atributo único `data-builder-id` a cada elemento dentro del `iframe` para su seguimiento.
-        - Adjunta escuchadores de eventos (`click`, `dblclick`, `mousemove`, `drop`) al `document` del iframe.
-        - Cuando ocurre un evento (por ejemplo, un clic), el escuchador despacha una acción (por ejemplo, `SET_SELECTED_ELEMENT`) con el `data-builder-id` del elemento objetivo.
+3.  **The Editor Canvas (`iframe`)**:
+    - The `EditorCanvas` component renders an `iframe`. The current page's HTML content is injected into the iframe's `srcDoc`.
+    - The **`useIframeBridge`** hook is the core of interactivity. It runs after the iframe loads and:
+        - Adds a unique `data-builder-id` attribute to every element inside the `iframe` for tracking.
+        - Attaches event listeners (`click`, `dblclick`, `mousemove`, `drop`) to the iframe's `document`.
+        - When an event occurs (e.g., a click), the listener dispatches an action (e.g., `SET_SELECTED_ELEMENT`) with the `data-builder-id` of the target element.
 
-4.  **Flujo de una Acción (Ejemplo: Redimensionar un Elemento)**:
-    1.  El usuario hace clic en un elemento. El `useIframeBridge` captura el clic y despacha `SET_SELECTED_ELEMENT`.
-    2.  El estado se actualiza. El componente `SelectionOverlay` ahora se renderiza alrededor del elemento seleccionado porque `state.selectedElementId` está establecido.
-    3.  `SelectionOverlay` incluye el componente `ResizeHandles`.
-    4.  El usuario hace clic y arrastra uno de los manejadores de redimensión.
-    5.  El evento `onMouseDown` en `ResizeHandles` activa un `handleMouseMove` que se escucha en el `window`.
-    6.  En cada movimiento del ratón, `handleMouseMove` despacha una acción `UPDATE_ELEMENT_STYLE` con el nuevo `width` y `height`.
-    7.  El `editorReducer` recibe la acción, actualiza el contenido HTML de la página en el estado.
-    8.  `EditorCanvas` se vuelve a renderizar, actualizando el `srcDoc` del iframe. El elemento aparece con su nuevo tamaño.
-    9.  Cuando el usuario suelta el ratón, se despacha una acción `ADD_HISTORY` para guardar el estado final en el historial de deshacer.
-```
+4.  **Action Flow (Example: Resizing an Element)**:
+    1.  The user clicks an element. The `useIframeBridge` catches the click and dispatches `SET_SELECTED_ELEMENT`.
+    2.  The state updates. The `SelectionOverlay` component now renders around the selected element because `state.selectedElementId` is set.
+    3.  `SelectionOverlay` includes the `ResizeHandles` component.
+    4.  The user clicks and drags one of the resize handles.
+    5.  The `onMouseDown` event on `ResizeHandles` triggers a `handleMouseMove` that is listened for on the `window`.
+    6.  On each mouse move, `handleMouseMove` dispatches an `UPDATE_ELEMENT_STYLE` action with the new `width` and `height`.
+    7.  The `editorReducer` receives the action, updates the page's HTML content in the state.
+    8.  `EditorCanvas` re-renders, updating the iframe's `srcDoc`. The element appears at its new size.
+    9.  When the user releases the mouse, an `ADD_HISTORY` action is dispatched to save the final state to the undo history.
