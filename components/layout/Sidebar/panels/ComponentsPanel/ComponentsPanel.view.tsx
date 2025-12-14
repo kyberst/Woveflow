@@ -1,9 +1,9 @@
 import React from 'react';
 import { Search, ChevronDown, ChevronRight } from 'lucide-react';
-import ComponentItem from '../ComponentsPanel/ComponentItem'; // Corrected import path
+import ComponentItem from '../ComponentsPanel/ComponentItem'; 
 import { useTranslation } from 'react-i18next';
 import { BuilderComponent } from '../../../../../types';
-import { COMPONENT_GROUPS } from '../../../../../constants/componentCategories'; // Use new constant location
+import { COMPONENT_GROUPS } from '../../../../../constants/componentCategories'; 
 
 interface ComponentsPanelViewProps {
     searchTerm: string;
@@ -80,4 +80,23 @@ export default function ComponentsPanelView({
                                         onClick={() => toggleGroup(group.id)}
                                         className="w-full flex items-center py-2 px-1 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 rounded transition-colors"
                                     >
-                                        {
+                                        {expandedGroups[group.id] ? <ChevronDown size={14} className="mr-1"/> : <ChevronRight size={14} className="mr-1"/>}
+                                        {t(group.id) || group.label}
+                                    </button>
+                                    
+                                    {expandedGroups[group.id] && (
+                                        <div className="grid grid-cols-3 gap-2 px-1 mt-1">
+                                            {groupItems.map(comp => (
+                                                <ComponentItem key={comp.id} component={comp} onClick={onItemClick} />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

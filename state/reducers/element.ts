@@ -167,13 +167,15 @@ export const elementReducer = (state: EditorState, action: Action): EditorState 
         });
         return updateCurrentPageContent(state, newContent);
     }
-    case 'UPDATE_COLUMN_SPAN': {
+    case 'UPDATE_CHILD_SPAN': {
         const { elementId, span } = action.payload;
         const { viewMode } = state;
         
         const newContent = updateTree(currentPage.content, elementId, (node) => {
             const styleToUpdate = { ...node.styles[viewMode] };
-            styleToUpdate.gridColumn = `span ${span}`;
+            
+            const spanValue = typeof span === 'number' ? `span ${span}` : span;
+            styleToUpdate.gridColumn = spanValue as string;
             
             return {
                 ...node,

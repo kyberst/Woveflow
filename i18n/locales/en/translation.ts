@@ -92,5 +92,14 @@ export default {
   "uploadAndOptimize": "Upload & Optimize",
   "optimizing": "Optimizing...",
   "optimizeDescription": "Automatically generates WebP variants for Mobile, Tablet, and Desktop.",
-  "optimizationFailed": "Image optimization failed."
+  "optimizationFailed": "Image optimization failed.",
+  "actions": "Actions",
+  "layoutOptions": "Layout Options",
+  "grid2Col": "Grid (2 Cols)",
+  "grid3Col": "Grid (3 Cols)",
+  "flexRow": "Flex Row",
+  "gridChildOptions": "Grid Item",
+  "span1": "Span 1 Col",
+  "span2": "Span 2 Cols",
+  "spanFull": "Span Full Width"
 };

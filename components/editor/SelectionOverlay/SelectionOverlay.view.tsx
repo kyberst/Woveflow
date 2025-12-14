@@ -30,7 +30,9 @@ export default function SelectionOverlayView({
         height: overlayPos.height
       }}
     >
+      {/* Visualizers (rendered behind toolbar/handles) */}
       <GridVisualizer iframeRef={iframeRef} overlayPos={overlayPos} />
+      
       <ElementToolbar />
       <ResizeHandles overlayPos={overlayPos} />
       

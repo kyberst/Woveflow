@@ -92,5 +92,14 @@ export default {
   "uploadAndOptimize": "Subir y Optimizar",
   "optimizing": "Optimizando...",
   "optimizeDescription": "Genera automáticamente variantes WebP para Móvil, Tablet y Escritorio.",
-  "optimizationFailed": "La optimización de imagen falló."
+  "optimizationFailed": "La optimización de imagen falló.",
+  "actions": "Acciones",
+  "layoutOptions": "Opciones de Diseño",
+  "grid2Col": "Rejilla (2 Cols)",
+  "grid3Col": "Rejilla (3 Cols)",
+  "flexRow": "Fila Flex",
+  "gridChildOptions": "Ítem de Rejilla",
+  "span1": "Ocupar 1 Col",
+  "span2": "Ocupar 2 Cols",
+  "spanFull": "Ancho Completo"
 };

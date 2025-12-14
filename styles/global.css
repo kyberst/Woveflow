@@ -31,3 +31,14 @@
 .dark .bg-dots {
   background-image: radial-gradient(#1e293b 1.5px, transparent 1.5px);
 }
+
+/* Hatch pattern for Grid Gaps */
+.hatch-pattern {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.05),
+    rgba(0, 0, 0, 0.05) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+}

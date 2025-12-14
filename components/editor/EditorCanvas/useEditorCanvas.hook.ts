@@ -31,7 +31,8 @@ export function useEditorCanvas() {
     <style id="base-styles">
         body { margin: 0; min-height: 100vh; }
         body.is-dragging { user-select: none; }
-        ::selection { background-color: #38bdf8; color: #ffffff; }
+        /* Celeste moderno selection style */
+        ::selection { background-color: #0ea5e9; color: #ffffff; } 
     </style>
 </head>
 <body class="bg-white"><div id="root"></div></body>

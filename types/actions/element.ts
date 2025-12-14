@@ -14,4 +14,5 @@ export type ElementAction =
   | { type: 'DELETE_ELEMENT' }
   | { type: 'DUPLICATE_ELEMENT'; payload: string }
   | { type: 'SET_GRID_LAYOUT'; payload: { elementId: string; layout: 'grid' | 'flex'; columns?: number; gap?: string } }
-  | { type: 'UPDATE_COLUMN_SPAN'; payload: { elementId: string; span: number } };
+  | { type: 'UPDATE_CHILD_SPAN'; payload: { elementId: string; span: number | string } }
+  | { type: 'RESIZE_GRID_COLUMN'; payload: { elementId: string; index: number; size: string } };
