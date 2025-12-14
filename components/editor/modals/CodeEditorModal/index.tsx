@@ -2,6 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { X, Code } from 'lucide-react';
 import { useEditor } from '../../../../hooks/useEditor';
 import { useTranslation } from 'react-i18next';
+import { BuilderElementNode, ViewMode } from '../../../../types';
+import { jsonToHtml } from '../../../../utils/jsonToHtml';
+
+// Recursive function to find a node by ID
+const findNodeById = (nodes: (BuilderElementNode | string)[], id: string): BuilderElementNode | null => {
+    for (const node of nodes) {
+        if (typeof node === 'string') continue;
+        if (node.id === id) return node;
+        const found = findNodeById(node.children, id);
+        if (found) return found;
+    }
+    return null;
+};
+
 
 interface Props {
   iframeRef: React.RefObject<HTMLIFrameElement>;
@@ -13,14 +27,15 @@ export default function CodeEditorModal({ iframeRef }: Props) {
   const [html, setHtml] = useState('');
 
   useEffect(() => {
-    if (state.selectedElementId && iframeRef.current) {
-      const doc = iframeRef.current.contentDocument;
-      const el = doc?.querySelector(`[data-builder-id="${state.selectedElementId}"]`);
-      if (el) {
-        setHtml(el.innerHTML);
-      }
+    if (state.selectedElementId) {
+        const currentPage = state.pages.find(p => p.id === state.currentPageId);
+        if (!currentPage) return;
+        const elementNode = findNodeById(currentPage.content, state.selectedElementId);
+        if (elementNode) {
+            setHtml(jsonToHtml(elementNode.children, state.components, true, ViewMode.Desktop));
+        }
     }
-  }, [state.selectedElementId, iframeRef]);
+  }, [state.selectedElementId, state.pages, state.currentPageId, state.components]);
 
   const handleSave = () => {
     if (!state.selectedElementId) return;

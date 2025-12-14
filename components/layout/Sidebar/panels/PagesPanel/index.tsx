@@ -16,15 +16,15 @@ export default function PagesPanel() {
   };
 
   const { systemPages, userPages } = useMemo(() => {
-    const filtered = state.pages.filter(p => {
-        const sitePrefix = state.currentSite === 'mitienda' ? 'p' : 'w';
-        return p.id.startsWith(sitePrefix) || p.id.startsWith('user-');
-    });
+    const currentSiteRecord = state.sites.find(s => s.name === state.currentSite);
+    if (!currentSiteRecord) return { systemPages: [], userPages: [] };
+
+    const filtered = state.pages.filter(p => p.site === currentSiteRecord.id);
     return {
         systemPages: filtered.filter(p => p.type === 'system'),
         userPages: filtered.filter(p => p.type === 'user'),
     };
-  }, [state.pages, state.currentSite]);
+  }, [state.pages, state.currentSite, state.sites]);
 
 
   return (

@@ -3,6 +3,19 @@ import { Sparkles } from 'lucide-react';
 import { useEditor } from '../../../../hooks/useEditor';
 import { generateAIContent } from '../../../../services/geminiService';
 import { useTranslation } from 'react-i18next';
+import { jsonToHtml } from '../../../../utils/jsonToHtml';
+import { ViewMode } from '../../../../types';
+
+// Recursive function to find a node by ID
+const findNodeById = (nodes, id) => {
+    for (const node of nodes) {
+        if (typeof node === 'string') continue;
+        if (node.id === id) return node;
+        const found = findNodeById(node.children, id);
+        if (found) return found;
+    }
+    return null;
+};
 
 export default function AIModal() {
   const { state, dispatch } = useEditor();
@@ -17,16 +30,15 @@ export default function AIModal() {
       const currentPage = state.pages.find(p => p.id === state.currentPageId);
       if (!currentPage) return;
       
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = currentPage.content;
-      const el = tempDiv.querySelector(`[data-builder-id="${state.selectedElementId}"]`);
-
-      if (el) {
-        const newHTML = await generateAIContent(aiPrompt, el.innerHTML);
-        el.innerHTML = newHTML;
+      const elementNode = findNodeById(currentPage.content, state.selectedElementId);
+      
+      if (elementNode) {
+        const currentHtmlContent = jsonToHtml(elementNode.children, state.components, true, ViewMode.Desktop);
+        const newHTML = await generateAIContent(aiPrompt, currentHtmlContent);
+        
         dispatch({
-          type: 'UPDATE_PAGE_CONTENT',
-          payload: { pageId: state.currentPageId, content: tempDiv.innerHTML }
+          type: 'UPDATE_ELEMENT_innerHTML',
+          payload: { elementId: state.selectedElementId, html: newHTML }
         });
         dispatch({ type: 'ADD_HISTORY' });
       }

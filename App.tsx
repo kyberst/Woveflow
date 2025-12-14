@@ -1,23 +1,58 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import EditorPage from './pages/EditorPage';
-import { SiteName } from './types';
-import { INITIAL_PAGES } from './constants';
+import { useEditor } from './hooks/useEditor';
+import { Loader2 } from 'lucide-react';
+import './plugins'; // Initialize plugins on startup
 
-export default function App() {
-  // Redirect to the default site and page for a seamless start
-  const defaultSite = SiteName.MiTienda;
-  const defaultPageId = INITIAL_PAGES[defaultSite][0].id;
+function AppRoutes() {
+  const { state, isLoading } = useEditor();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center bg-gray-50 dark:bg-slate-950 font-sans">
+        <div className="flex items-center space-x-3 text-builder-primary font-bold text-2xl mb-4">
+            <Loader2 className="w-10 h-10 animate-spin" />
+            <span className="tracking-tight">Woveflow</span>
+        </div>
+        <p className="text-slate-500 font-medium">Loading application data...</p>
+      </div>
+    );
+  }
+
+  // Handle case where initialization failed or no data exists
+  if (state.sites.length === 0) {
+    return (
+       <div className="flex h-screen w-screen items-center justify-center bg-gray-50 dark:bg-slate-950 text-slate-500">
+          <p>No sites available. System initialization failed.</p>
+       </div>
+    );
+  }
+
+  // Calculate default route dynamically from loaded state
+  let defaultRedirect = '/';
+  const firstSite = state.sites[0];
+  const firstPage = state.pages.find(p => p.site === firstSite.id);
+  
+  if (firstSite && firstPage) {
+      defaultRedirect = `/editor/${firstSite.name}/${firstPage.id}`;
+  }
 
   return (
-    <HashRouter>
       <Routes>
         <Route path="/editor/:site/:pageId" element={<EditorPage />} />
         <Route 
           path="*" 
-          element={<Navigate to={`/editor/${defaultSite}/${defaultPageId}`} replace />} 
+          element={<Navigate to={defaultRedirect} replace />} 
         />
       </Routes>
+  );
+}
+
+export default function App() {
+  return (
+    <HashRouter>
+      <AppRoutes />
     </HashRouter>
   );
 }

@@ -10,36 +10,18 @@ export default function AddComponentModal() {
   const { t } = useTranslation();
 
   const handleComponentInsert = (component: BuilderComponent) => {
-    const currentPage = state.pages.find(p => p.id === state.currentPageId);
-    if (!currentPage) return;
-    
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = component.html;
-    const newEl = tempDiv.firstElementChild as HTMLElement;
-    if (!newEl) return;
+    const targetId = state.insertionTarget ? state.insertionTarget.elementId : null;
+    const mode = state.insertionTarget ? state.insertionTarget.mode : 'inside';
 
-    newEl.setAttribute('data-builder-id', `el-${Date.now()}`);
-
-    const tempContainer = document.createElement('div');
-    tempContainer.innerHTML = currentPage.content;
-
-    if (state.insertionTarget) {
-      const targetEl = tempContainer.querySelector(`[data-builder-id="${state.insertionTarget.elementId}"]`);
-      if (targetEl) {
-        if (state.insertionTarget.mode === 'inside') {
-          targetEl.innerHTML = newEl.outerHTML;
-        } else { // 'after'
-          targetEl.insertAdjacentElement('afterend', newEl);
-        }
-      }
-    } else { // Fallback for initial empty page
-      tempContainer.innerHTML = newEl.outerHTML;
-    }
-      
     dispatch({ 
-      type: 'UPDATE_PAGE_CONTENT', 
-      payload: { pageId: state.currentPageId, content: tempContainer.innerHTML } 
+      type: 'ADD_ELEMENT', 
+      payload: { 
+        targetId, 
+        mode, 
+        element: JSON.parse(JSON.stringify(component.content)) // Deep copy
+      } 
     });
+    
     dispatch({ type: 'ADD_HISTORY' });
     dispatch({ type: 'SET_INSERTION_TARGET', payload: null });
     dispatch({ type: 'TOGGLE_ADD_COMPONENT_MODAL', payload: false });

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 interface Props {
   page: Page;
+  key?: React.Key;
 }
 
 export default function PageItem({ page }: Props) {

@@ -16,7 +16,10 @@
     "react-router-dom": "6.23.1",
     "i18next": "^23.11.5",
     "react-i18next": "^14.1.2",
-    "dompurify": "^3.1.5"
+    "dompurify": "^3.1.5",
+    "jszip": "^3.10.1",
+    "decimal.js": "10.4.3",
+    "@monaco-editor/react": "4.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

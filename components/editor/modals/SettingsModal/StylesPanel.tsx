@@ -3,6 +3,18 @@ import { useEditor } from '../../../../hooks/useEditor';
 import { useTranslation } from 'react-i18next';
 import { STYLE_PROPERTIES } from '../../../../constants';
 import StyleInput from './StyleInput';
+import { BuilderElementNode } from '../../../../types';
+
+// Recursive function to find a node by ID
+const findNodeById = (nodes: (BuilderElementNode | string)[], id: string): BuilderElementNode | null => {
+    for (const node of nodes) {
+        if (typeof node === 'string') continue;
+        if (node.id === id) return node;
+        const found = findNodeById(node.children, id);
+        if (found) return found;
+    }
+    return null;
+};
 
 interface Props {
   iframeRef: React.RefObject<HTMLIFrameElement>;
@@ -12,16 +24,26 @@ export default function StylesPanel({ iframeRef }: Props) {
   const { state } = useEditor();
   const { t } = useTranslation();
 
-  const computedStyles = useMemo(() => {
-    if (state.selectedElementId && iframeRef.current?.contentWindow) {
-      const el = iframeRef.current.contentDocument?.querySelector(`[data-builder-id="${state.selectedElementId}"]`);
-      if (el) {
-        return iframeRef.current.contentWindow.getComputedStyle(el);
-      }
-    }
-    return null;
-  }, [state.selectedElementId, iframeRef, state.pages]); // Re-compute when page content changes
+  const selectedNode = useMemo(() => {
+    if (!state.selectedElementId) return null;
+    const currentPage = state.pages.find(p => p.id === state.currentPageId);
+    if (!currentPage) return null;
+    return findNodeById(currentPage.content, state.selectedElementId);
+  }, [state.selectedElementId, state.pages, state.currentPageId]);
 
+  const getCascadedStyle = (propName: keyof React.CSSProperties) => {
+    if (!selectedNode) return '';
+
+    const mobileStyle = selectedNode.styles.mobile?.[propName];
+    const tabletStyle = selectedNode.styles.tablet?.[propName];
+    const desktopStyle = selectedNode.styles.desktop?.[propName];
+
+    if (state.viewMode === 'mobile' && mobileStyle !== undefined) return mobileStyle;
+    if ((state.viewMode === 'mobile' || state.viewMode === 'tablet') && tabletStyle !== undefined) return tabletStyle;
+    
+    return desktopStyle ?? '';
+  };
+  
   if (!state.selectedElementId) {
     return <div className="p-4 text-sm text-slate-500">Select an element to edit styles.</div>;
   }
@@ -38,8 +60,8 @@ export default function StylesPanel({ iframeRef }: Props) {
                 label={prop.label}
                 prop={prop.prop}
                 type={prop.type}
-                options={prop.options}
-                value={computedStyles?.[prop.prop as any] || ''}
+                options={(prop as any).options}
+                value={getCascadedStyle(prop.prop as any) as string}
               />
             ))}
           </div>

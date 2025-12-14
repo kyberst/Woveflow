@@ -15,22 +15,35 @@ export default function SidebarTabs() {
     const { state, dispatch } = useEditor();
     const { t } = useTranslation();
 
-    const handleTabClick = (tabId: string | null) => {
-        dispatch({ type: 'SET_ACTIVE_TAB', payload: tabId });
+    const handleTabClick = (tabId: string) => {
+        if (tabId === 'code') {
+            dispatch({ type: 'TOGGLE_BOTTOM_PANEL', payload: !state.showBottomPanel });
+            dispatch({ type: 'SET_BOTTOM_TAB', payload: 'code' });
+        } else {
+            const isActive = state.activeTab === tabId;
+            dispatch({ type: 'SET_ACTIVE_TAB', payload: isActive ? null : tabId });
+        }
     };
 
     return (
-        <div className="w-16 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col items-center py-4 space-y-4">
-            {TABS.map(tab => (
-                <button
-                    key={tab.id}
-                    onClick={() => handleTabClick(state.activeTab === tab.id ? null : tab.id)}
-                    className={`p-3 rounded-xl transition-colors ${state.activeTab === tab.id ? 'bg-blue-100 text-blue-600 dark:bg-slate-700' : 'hover:bg-gray-100 dark:hover:bg-slate-700'}`}
-                    title={t(tab.id)}
-                >
-                    <tab.icon size={24} />
-                </button>
-            ))}
+        <div className="w-16 bg-builder-darker text-slate-400 border-r border-slate-800 flex flex-col items-center py-6 space-y-2 z-10">
+            {TABS.map(tab => {
+                const isActive = tab.id === 'code' ? state.showBottomPanel : state.activeTab === tab.id;
+                return (
+                    <button
+                        key={tab.id}
+                        onClick={() => handleTabClick(tab.id)}
+                        className={`group relative p-3 rounded-xl transition-all duration-200 ${
+                            isActive 
+                                ? 'bg-builder-primary text-white shadow-lg shadow-builder-primary/30' 
+                                : 'hover:bg-white/10 hover:text-white'
+                        }`}
+                        title={t(tab.id)}
+                    >
+                        <tab.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                    </button>
+                );
+            })}
         </div>
     );
 }

@@ -41,8 +41,10 @@ export default function ResizeHandles({ overlayPos }: Props) {
       if (direction.includes('s')) newHeight = startHeight + (moveEvent.clientY - startY);
       if (direction.includes('n')) newHeight = startHeight - (moveEvent.clientY - startY);
 
-      dispatch({ type: 'UPDATE_ELEMENT_STYLE', payload: { elementId: state.selectedElementId, property: 'width', value: `${Math.max(10, newWidth)}px` } });
-      dispatch({ type: 'UPDATE_ELEMENT_STYLE', payload: { elementId: state.selectedElementId, property: 'height', value: `${Math.max(10, newHeight)}px` } });
+      // FIX: Add the required `viewMode` property to the action payload.
+      dispatch({ type: 'UPDATE_ELEMENT_STYLE', payload: { elementId: state.selectedElementId, property: 'width', value: `${Math.max(10, newWidth)}px`, viewMode: state.viewMode } });
+      // FIX: Add the required `viewMode` property to the action payload.
+      dispatch({ type: 'UPDATE_ELEMENT_STYLE', payload: { elementId: state.selectedElementId, property: 'height', value: `${Math.max(10, newHeight)}px`, viewMode: state.viewMode } });
     };
 
     const handleMouseUp = () => {

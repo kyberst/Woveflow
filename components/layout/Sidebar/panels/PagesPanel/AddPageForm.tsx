@@ -3,6 +3,7 @@ import { Check, X } from 'lucide-react';
 import { useEditor } from '../../../../../hooks/useEditor';
 import { Page } from '../../../../../types';
 import { useTranslation } from 'react-i18next';
+import { htmlToJson } from '../../../../../utils/htmlToJson';
 
 interface Props {
   onClose: () => void;
@@ -28,11 +29,20 @@ export default function AddPageForm({ onClose }: Props) {
       setError(validationError);
       return;
     }
+    
+    const currentSiteRecord = state.sites.find(s => s.name === state.currentSite);
+    if (!state.currentUser || !currentSiteRecord) {
+      setError('Cannot create page: user or site context is missing.');
+      return;
+    }
+
     const newPage: Page = {
       id: `user-${Date.now()}`,
       name,
       type: 'user',
-      content: '<div class="p-4"><h1>New Page</h1></div>'
+      content: htmlToJson('<div class="p-4"><h1>New Page</h1></div>'),
+      owner: state.currentUser.id,
+      site: currentSiteRecord.id,
     };
     dispatch({ type: 'ADD_PAGE', payload: newPage });
     onClose();

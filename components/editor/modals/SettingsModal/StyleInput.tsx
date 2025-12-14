@@ -6,10 +6,11 @@ interface Props {
   prop: string;
   type: 'text' | 'select' | 'color' | 'range';
   value: string;
-  options?: string[];
+  options?: readonly string[];
   min?: number;
   max?: number;
   step?: number;
+  key?: React.Key;
 }
 
 export default function StyleInput({ label, prop, type, value, options, min, max, step }: Props) {
@@ -24,7 +25,15 @@ export default function StyleInput({ label, prop, type, value, options, min, max
     const newValue = e.target.value;
     setCurrentValue(newValue);
     if (state.selectedElementId) {
-      dispatch({ type: 'UPDATE_ELEMENT_STYLE', payload: { elementId: state.selectedElementId, property: prop, value: newValue } });
+      dispatch({ 
+          type: 'UPDATE_ELEMENT_STYLE', 
+          payload: { 
+              elementId: state.selectedElementId, 
+              property: prop, 
+              value: newValue,
+              viewMode: state.viewMode
+            } 
+        });
     }
   };
 

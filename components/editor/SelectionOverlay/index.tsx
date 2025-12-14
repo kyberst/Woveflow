@@ -4,6 +4,7 @@ import ElementToolbar from './ElementToolbar';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ResizeHandles from './ResizeHandles';
+import GridVisualizer from './GridVisualizer';
 
 interface Props {
   iframeRef: React.RefObject<HTMLIFrameElement>;
@@ -29,7 +30,7 @@ export default function SelectionOverlay({ iframeRef }: Props) {
   }, [state.selectedElementId, iframeRef, state.zoom, state.viewMode, state.pages]);
 
   useEffect(() => {
-    const interval = setInterval(updateOverlay, 100); // Periodically check for position changes
+    const interval = setInterval(updateOverlay, 50); // Fast check for smoother feel
     window.addEventListener('resize', updateOverlay);
     const doc = iframeRef.current?.contentDocument;
     doc?.addEventListener('scroll', updateOverlay);
@@ -51,7 +52,7 @@ export default function SelectionOverlay({ iframeRef }: Props) {
 
   return (
     <div 
-      className="absolute border-2 border-builder-primary pointer-events-none z-50 transition-all duration-75"
+      className="absolute border-2 border-blue-600 pointer-events-none z-50 transition-all duration-75"
       style={{
         top: overlayPos.top + (iframeRef.current?.contentWindow?.scrollY || 0),
         left: overlayPos.left + (iframeRef.current?.contentWindow?.scrollX || 0),
@@ -59,12 +60,15 @@ export default function SelectionOverlay({ iframeRef }: Props) {
         height: overlayPos.height
       }}
     >
+      <GridVisualizer iframeRef={iframeRef} overlayPos={overlayPos} />
       <ElementToolbar />
       <ResizeHandles overlayPos={overlayPos} />
+      
+      {/* Round Blue Plus Button at Bottom Center */}
       <button
         onClick={handleAddClick}
-        title={t('addComponent') || ''}
-        className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-builder-primary text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto hover:scale-110 transition-transform"
+        title={t('addComponent') || 'Add Component'}
+        className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto hover:scale-110 transition-transform z-50"
       >
         <Plus size={20} />
       </button>

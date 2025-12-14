@@ -2,6 +2,18 @@ import React, { useState } from 'react';
 import { X, PackagePlus } from 'lucide-react';
 import { useEditor } from '../../../../hooks/useEditor';
 import { useTranslation } from 'react-i18next';
+import { BuilderElementNode, BuilderComponent } from '../../../../types';
+
+// Recursive function to find a node by ID
+const findNodeById = (nodes: (BuilderElementNode | string)[], id: string): BuilderElementNode | null => {
+    for (const node of nodes) {
+        if (typeof node === 'string') continue;
+        if (node.id === id) return node;
+        const found = findNodeById(node.children, id);
+        if (found) return found;
+    }
+    return null;
+};
 
 interface Props {
   iframeRef: React.RefObject<HTMLIFrameElement>;
@@ -13,22 +25,24 @@ export default function SaveComponentModal({ iframeRef }: Props) {
   const [name, setName] = useState('');
 
   const handleSave = () => {
-    if (!name.trim() || !state.selectedElementId || !iframeRef.current) return;
+    if (!name.trim() || !state.selectedElementId || !state.currentUser) return;
 
-    const doc = iframeRef.current.contentDocument;
-    const el = doc?.querySelector(`[data-builder-id="${state.selectedElementId}"]`);
+    const currentPage = state.pages.find(p => p.id === state.currentPageId);
+    if (!currentPage) return;
 
-    if (el) {
-        try {
-            const stored = localStorage.getItem('mis componentes') || '[]';
-            const components = JSON.parse(stored);
-            components.push({ name, content: el.outerHTML });
-            localStorage.setItem('mis componentes', JSON.stringify(components));
-            alert(`Component "${name}" saved!`);
-        } catch(e) {
-            alert("Failed to save component.");
-            console.error(e);
-        }
+    const elementNode = findNodeById(currentPage.content, state.selectedElementId);
+    
+    if (elementNode) {
+        const newComponent: BuilderComponent = {
+            id: `custom-${Date.now()}`,
+            name: name,
+            category: 'custom',
+            content: JSON.parse(JSON.stringify(elementNode)), // Deep copy the node
+            icon: 'star',
+            owner: state.currentUser.id,
+        };
+        dispatch({ type: 'ADD_COMPONENT', payload: newComponent });
+        alert(`Component "${name}" saved!`);
     }
     dispatch({ type: 'TOGGLE_SAVE_COMPONENT_MODAL', payload: false });
   };
