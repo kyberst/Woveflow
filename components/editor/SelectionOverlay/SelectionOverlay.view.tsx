@@ -34,7 +34,7 @@ export default function SelectionOverlayView({
       <GridVisualizer iframeRef={iframeRef} overlayPos={overlayPos} />
       
       <ElementToolbar />
-      <ResizeHandles overlayPos={overlayPos} />
+      <ResizeHandles overlayPos={overlayPos} iframeRef={iframeRef} />
       
       <button
         onClick={handleAddClick}

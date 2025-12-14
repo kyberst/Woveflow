@@ -7,6 +7,7 @@ import AppliedClassesManager from '../AppliedClassesManager';
 import { Smartphone, Tablet, Monitor, ArrowLeft } from 'lucide-react';
 import { useInlineStyles } from './useInlineStyles.hook';
 import { ViewMode } from '../../../../../../types';
+import GridSettings from './GridSettings';
 
 export default function InlineStylesEditorView() {
   const { selectedNode, viewMode, isOverridden, getEffectiveStyle, handleStyleChange, dispatch } = useInlineStyles();
@@ -37,7 +38,11 @@ export default function InlineStylesEditorView() {
 
       <div className="flex-grow overflow-y-auto custom-scrollbar">
           <BoxModelControl />
+          
+          <GridSettings node={selectedNode} viewMode={viewMode} />
+
           <AppliedClassesManager />
+          
           {STYLE_PROPERTIES.map(group => (
             <div key={group.group} className="border-b border-gray-100 dark:border-slate-800">
               <details className="group" open={['Layout', 'Flex & Grid Parent', 'Spacing'].includes(group.group)}>

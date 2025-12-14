@@ -168,15 +168,18 @@ export const elementReducer = (state: EditorState, action: Action): EditorState 
         return updateCurrentPageContent(state, newContent);
     }
     case 'UPDATE_CHILD_SPAN': {
-        const { elementId, span } = action.payload;
-        const { viewMode } = state;
+        const { elementId, value, viewMode } = action.payload;
         
         const newContent = updateTree(currentPage.content, elementId, (node) => {
             const styleToUpdate = { ...node.styles[viewMode] };
             
-            const spanValue = typeof span === 'number' ? `span ${span}` : span;
-            styleToUpdate.gridColumn = spanValue as string;
+            styleToUpdate.gridColumn = value;
             
+            // Remove explicit width if it exists, to allow the span to take control
+            if (styleToUpdate.width) {
+               delete styleToUpdate.width;
+            }
+
             return {
                 ...node,
                 styles: { ...node.styles, [viewMode]: styleToUpdate }

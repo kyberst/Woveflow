@@ -22,7 +22,6 @@ export const Renderer: React.FC<RendererProps> = ({ node, components, viewMode }
     if (node.componentId) {
         const componentDef = components.find(c => c.id === node.componentId);
         if (componentDef) {
-            // Use JSONRenderer for component content to maintain consistency
             return (
                 <JSONRenderer 
                     content={[componentDef.content]} 
@@ -34,22 +33,31 @@ export const Renderer: React.FC<RendererProps> = ({ node, components, viewMode }
         return <div className="p-2 text-red-500 border border-red-300 bg-red-50">Component "{node.componentId}" not found.</div>;
     }
 
-    // 3. Resolve Responsive Styles
+    // 3. Resolve Responsive Styles (Cascade Strategy: Desktop -> Tablet -> Mobile)
     const computedStyles = useMemo(() => {
+        // Base styles (Desktop is default in this architecture)
         let styles: React.CSSProperties = { ...node.styles.desktop };
         
+        // If Tablet, merge tablet styles on top of desktop
         if (viewMode === ViewMode.Tablet || viewMode === ViewMode.Mobile) {
-            styles = { ...styles, ...node.styles.tablet };
+            // Only merge keys that exist in tablet config
+            if (node.styles.tablet) {
+                styles = { ...styles, ...node.styles.tablet };
+            }
         }
+        
+        // If Mobile, merge mobile styles on top of the result
         if (viewMode === ViewMode.Mobile) {
-            styles = { ...styles, ...node.styles.mobile };
+            if (node.styles.mobile) {
+                styles = { ...styles, ...node.styles.mobile };
+            }
         }
         return styles;
     }, [node.styles, viewMode]);
 
     // 4. Resolve Attributes & Classes
     const props: any = {
-        'data-builder-id': node.id, // Critical for selection logic
+        'data-builder-id': node.id, // Critical for selection & visualizer logic
         style: computedStyles,
         className: node.classNames?.join(' '),
         ...node.attributes

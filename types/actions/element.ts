@@ -1,5 +1,6 @@
 import { BuilderElementNode } from '../element';
-import { ViewMode } from '../enums'; // Corrected import
+import { ViewMode } from '../enums';
+import { CSSProperties } from 'react';
 
 export type ElementAction =
   | { type: 'UPDATE_ELEMENT_ATTRIBUTE'; payload: { elementId: string; attribute: string; value: string } }
@@ -14,5 +15,6 @@ export type ElementAction =
   | { type: 'DELETE_ELEMENT' }
   | { type: 'DUPLICATE_ELEMENT'; payload: string }
   | { type: 'SET_GRID_LAYOUT'; payload: { elementId: string; layout: 'grid' | 'flex'; columns?: number; gap?: string } }
-  | { type: 'UPDATE_CHILD_SPAN'; payload: { elementId: string; span: number | string } }
+  | { type: 'SET_CONTAINER_LAYOUT'; payload: { elementId: string; styles: CSSProperties; viewMode: ViewMode } }
+  | { type: 'UPDATE_CHILD_SPAN'; payload: { elementId: string; property: 'gridColumn'; value: string; viewMode: ViewMode } }
   | { type: 'RESIZE_GRID_COLUMN'; payload: { elementId: string; index: number; size: string } };

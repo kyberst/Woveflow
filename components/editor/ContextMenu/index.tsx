@@ -68,16 +68,32 @@ export default function ContextMenu() {
 
     const handleConvertToGrid = (columns: number) => handleAction(() => {
         dispatch({ 
-            type: 'SET_GRID_LAYOUT', 
-            payload: { elementId, layout: 'grid', columns, gap: '1rem' } 
+            type: 'SET_CONTAINER_LAYOUT', 
+            payload: { 
+                elementId, 
+                styles: {
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                    gap: '1rem'
+                },
+                viewMode: state.viewMode
+            } 
         });
         dispatch({ type: 'ADD_HISTORY' });
     });
 
     const handleConvertToFlex = () => handleAction(() => {
         dispatch({ 
-            type: 'SET_GRID_LAYOUT', 
-            payload: { elementId, layout: 'flex', gap: '1rem' } 
+            type: 'SET_CONTAINER_LAYOUT', 
+            payload: { 
+                elementId, 
+                styles: {
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '1rem'
+                },
+                viewMode: state.viewMode
+            } 
         });
         dispatch({ type: 'ADD_HISTORY' });
     });
@@ -85,7 +101,12 @@ export default function ContextMenu() {
     const handleSpanChange = (span: number | string) => handleAction(() => {
         dispatch({
             type: 'UPDATE_CHILD_SPAN',
-            payload: { elementId, span }
+            payload: { 
+                elementId, 
+                property: 'gridColumn',
+                value: typeof span === 'number' ? `span ${span}` : span,
+                viewMode: state.viewMode
+            }
         });
         dispatch({ type: 'ADD_HISTORY' });
     });

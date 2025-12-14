@@ -3,6 +3,7 @@ import { useEditor } from '../../../hooks/useEditor';
 
 interface Props {
   overlayPos: DOMRect;
+  iframeRef: React.RefObject<HTMLIFrameElement>;
 }
 
 type HandleDirection = 'n' | 's' | 'e' | 'w' | 'nw' | 'ne' | 'sw' | 'se';
@@ -18,7 +19,7 @@ const handlePositions: Record<HandleDirection, { top?: string; bottom?: string; 
   se: { bottom: '-4px', right: '-4px', cursor: 'nwse-resize' },
 };
 
-export default function ResizeHandles({ overlayPos }: Props) {
+export default function ResizeHandles({ overlayPos, iframeRef }: Props) {
   const { state, dispatch } = useEditor();
 
   const handleMouseDown = (e: React.MouseEvent, direction: HandleDirection) => {
@@ -26,6 +27,31 @@ export default function ResizeHandles({ overlayPos }: Props) {
     e.stopPropagation();
 
     if (!state.selectedElementId) return;
+
+    // --- GRID DETECTION LOGIC ---
+    let isGridChild = false;
+    let gridColWidth = 0; // approximate
+    let gridGap = 0;
+    
+    if (iframeRef.current?.contentDocument) {
+        const el = iframeRef.current.contentDocument.querySelector(`[data-builder-id="${state.selectedElementId}"]`) as HTMLElement;
+        const parent = el?.parentElement;
+        if (parent) {
+            const computed = getComputedStyle(parent);
+            if (computed.display === 'grid') {
+                isGridChild = true;
+                const gap = parseFloat(computed.columnGap) || 0;
+                gridGap = gap;
+                const parentWidth = parent.getBoundingClientRect().width;
+                // Heuristic: Estimate column width based on uniform assumption or splitting tracks
+                const tracks = computed.gridTemplateColumns.split(' ').length;
+                if (tracks > 0) {
+                    gridColWidth = (parentWidth - (gap * (tracks - 1))) / tracks;
+                }
+            }
+        }
+    }
+    // ----------------------------
 
     const startX = e.clientX;
     const startY = e.clientY;
@@ -41,10 +67,29 @@ export default function ResizeHandles({ overlayPos }: Props) {
       if (direction.includes('s')) newHeight = startHeight + (moveEvent.clientY - startY);
       if (direction.includes('n')) newHeight = startHeight - (moveEvent.clientY - startY);
 
-      // FIX: Add the required `viewMode` property to the action payload.
-      dispatch({ type: 'UPDATE_ELEMENT_STYLE', payload: { elementId: state.selectedElementId, property: 'width', value: `${Math.max(10, newWidth)}px`, viewMode: state.viewMode } });
-      // FIX: Add the required `viewMode` property to the action payload.
-      dispatch({ type: 'UPDATE_ELEMENT_STYLE', payload: { elementId: state.selectedElementId, property: 'height', value: `${Math.max(10, newHeight)}px`, viewMode: state.viewMode } });
+      // --- GRID SNAP LOGIC ---
+      if (isGridChild && (direction === 'e' || direction === 'w') && gridColWidth > 0) {
+          // Calculate span based on width
+          const rawSpan = Math.round(newWidth / (gridColWidth + gridGap));
+          const safeSpan = Math.max(1, rawSpan); // Minimum 1 column
+          
+          dispatch({ 
+              type: 'UPDATE_CHILD_SPAN', 
+              payload: { 
+                  elementId: state.selectedElementId!, 
+                  property: 'gridColumn', 
+                  value: `span ${safeSpan}`, 
+                  viewMode: state.viewMode 
+              } 
+          });
+          // Do not update width/height style when handling grid span
+          return;
+      }
+      // -----------------------
+
+      // Normal Pixel Resizing
+      dispatch({ type: 'UPDATE_ELEMENT_STYLE', payload: { elementId: state.selectedElementId!, property: 'width', value: `${Math.max(10, newWidth)}px`, viewMode: state.viewMode } });
+      dispatch({ type: 'UPDATE_ELEMENT_STYLE', payload: { elementId: state.selectedElementId!, property: 'height', value: `${Math.max(10, newHeight)}px`, viewMode: state.viewMode } });
     };
 
     const handleMouseUp = () => {
