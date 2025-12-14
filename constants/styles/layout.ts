@@ -1,0 +1,16 @@
+export const LAYOUT_PROPERTIES = [
+    { label: 'Display', prop: 'display', type: 'select', options: ['block', 'inline-block', 'flex', 'grid', 'none', 'inline'] },
+    { label: 'Position', prop: 'position', type: 'select', options: ['static', 'relative', 'absolute', 'fixed', 'sticky'] },
+    { label: 'Top', prop: 'top', type: 'text' },
+    { label: 'Bottom', prop: 'bottom', type: 'text' },
+    { label: 'Left', prop: 'left', type: 'text' },
+    { label: 'Right', prop: 'right', type: 'text' },
+    { label: 'Z-Index', prop: 'zIndex', type: 'text' },
+    { label: 'Float', prop: 'float', type: 'select', options: ['none', 'left', 'right'] },
+    { label: 'Width', prop: 'width', type: 'text' },
+    { label: 'Height', prop: 'height', type: 'text' },
+    { label: 'Min Width', prop: 'minWidth', type: 'text' },
+    { label: 'Min Height', prop: 'minHeight', type: 'text' },
+    { label: 'Max Width', prop: 'maxWidth', type: 'text' },
+    { label: 'Overflow', prop: 'overflow', type: 'select', options: ['visible', 'hidden', 'scroll', 'auto'] },
+];

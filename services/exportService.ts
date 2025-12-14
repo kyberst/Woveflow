@@ -1,6 +1,7 @@
 import { EditorState, BuilderElementNode } from '../types';
 import { jsonToHtml, generateDesignTokensCSS, generateGlobalStyles } from '../utils/jsonToHtml';
 import { runHook } from './pluginService';
+import { minifyCss } from '../utils/css';
 import JSZip from 'jszip';
 
 /**
@@ -26,13 +27,7 @@ const collectUsedClasses = (nodes: (BuilderElementNode | string)[]): Set<string>
 /**
  * Minifies a CSS string by removing comments, newlines, and excess whitespace.
  */
-const minifyCss = (css: string): string => {
-    return css
-        .replace(/\/\*[\s\S]*?\*\//g, '') // remove comments
-        .replace(/\s*([{}:;,])\s*/g, '$1') // remove whitespace around operators
-        .replace(/\s\s+/g, ' ') // collapse multiple spaces into one
-        .trim();
-};
+// Moved to utils/css.ts
 
 /**
  * Generates a static site from the current editor state, packages it into a ZIP file,

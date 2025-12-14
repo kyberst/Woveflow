@@ -1,0 +1,2 @@
+export const VOID_ELEMENTS = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+export const CONTAINER_TAGS = ['div', 'section', 'main', 'header', 'footer', 'article', 'aside', 'form', 'ul', 'ol', 'nav', 'blockquote'];

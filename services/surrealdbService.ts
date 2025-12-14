@@ -1,22 +1,21 @@
-import { EditorState, Page, BuilderComponent, GlobalClass, DesignToken, Site, SiteMember, ViewMode, BuilderElementNode, SiteName } from '../types';
-import { _select, _create, _update, _merge, _delete } from './db/ops';
-import { connect, db, useLocalStorage } from './db/client';
-import { login, getCurrentUser } from './db/auth';
+import { EditorState, SiteName, ViewMode, BuilderElementNode } from '../types';
+import { _select } from './db/ops';
+import { connect, useLocalStorage } from './db/client';
+import { login } from './db/auth';
 import { seedInitialData } from './db/seed';
 
 // Re-export core functions
-export { login, getCurrentUser };
+export { login };
 
-interface SurrealResult<T> {
-  result?: T;
-  status: string;
-}
+// Import modular DB operations
+import { updatePageContent, createPage, deletePage, updatePage } from './db/pageOps';
+import { updateSite } from './db/siteOps';
+import { createComponent } from './db/componentOps';
+import { createGlobalClass, updateGlobalClass, deleteGlobalClass } from './db/classOps';
+import { createDesignToken, updateDesignToken, deleteDesignToken } from './db/designTokenOps';
+import { getSiteMembers } from './db/siteMemberOps';
+import { Site, BuilderComponent, GlobalClass, DesignToken, Page } from '../types';
 
-// Helper to access LocalStorage directly if needed (though ops abstract this)
-const STORAGE_PREFIX = 'woveflow_';
-const getStore = (table: string) => {
-    try { return JSON.parse(localStorage.getItem(`${STORAGE_PREFIX}${table}`) || '[]'); } catch { return []; }
-};
 
 export async function getInitialData(): Promise<EditorState> {
     await connect();
@@ -82,28 +81,19 @@ export async function getInitialData(): Promise<EditorState> {
     };
 }
 
-// Public API
-export const updatePageContent = async (pageId: string, content: BuilderElementNode[]) => { await _merge(`page:${pageId}`, { content }); };
-export const createPage = async (page: Page) => { await _create(`page:${page.id}`, page); };
-export const deletePage = async (pageId: string) => { await _delete(`page:${pageId}`); };
-export const updatePage = async (page: Page) => { await _update(`page:${page.id}`, page); };
-export const updateSite = async (site: Site) => { await _update(`site:${site.id}`, site); };
-export const createComponent = async (component: BuilderComponent) => { await _create(`component:${component.id}`, component); };
-export const createGlobalClass = async (cls: GlobalClass) => { await _create('global_class', cls); };
-export const updateGlobalClass = async (cls: GlobalClass) => { await _update(`global_class:${cls.id}`, cls); };
-export const deleteGlobalClass = async (id: string) => { await _delete(`global_class:${id}`); };
-export const createDesignToken = async (token: DesignToken) => { await _create('design_token', token); };
-export const updateDesignToken = async (token: DesignToken) => { await _update(`design_token:${token.id}`, token); };
-export const deleteDesignToken = async (id: string) => { await _delete(`design_token:${id}`); };
-
-export const getSiteMembers = async (): Promise<SiteMember[]> => {
-    if (useLocalStorage) return getStore('site_member');
-    try {
-        const query = 'SELECT id, role, site, user, user.username as username FROM site_member';
-        const result = await db.query<[SurrealResult<SiteMember[]>]>(query);
-        return result[0]?.result || [];
-    } catch (e) {
-        console.error('Failed to get site members', e);
-        return [];
-    }
+// Public API exports
+export {
+  updatePageContent,
+  createPage,
+  deletePage,
+  updatePage,
+  updateSite,
+  createComponent,
+  createGlobalClass,
+  updateGlobalClass,
+  deleteGlobalClass,
+  createDesignToken,
+  updateDesignToken,
+  deleteDesignToken,
+  getSiteMembers,
 };

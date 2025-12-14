@@ -1,17 +1,5 @@
 import { Plugin, BuilderElementNode } from '../types';
-
-/**
- * Recursively traverses a node tree and applies a function to each node.
- */
-const traverse = (nodes: (BuilderElementNode | string)[], callback: (node: BuilderElementNode) => void) => {
-  nodes.forEach(node => {
-    if (typeof node === 'string') return;
-    callback(node);
-    if (node.children) {
-      traverse(node.children, callback);
-    }
-  });
-};
+import { traverse } from '../utils/treeTraverse';
 
 export const seoOptimizerPlugin: Plugin = {
   name: 'SEO Optimizer',

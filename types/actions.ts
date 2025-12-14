@@ -1,10 +1,11 @@
-import { EditorState, DragOverState } from './editor';
+import { EditorState } from './editor';
 import { SiteName, ViewMode } from './enums';
 import { Site } from './site';
 import { SiteMember } from './user';
 import { Page } from './page';
 import { BuilderElementNode, BuilderComponent } from './element';
 import { GlobalClass, DesignToken, DesignTokenCategory } from './styles';
+import { DragOverState } from './dragAndDrop'; // Corrected import
 
 export type Action =
   | { type: 'SET_INITIAL_STATE'; payload: EditorState }

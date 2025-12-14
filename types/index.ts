@@ -6,3 +6,5 @@ export * from './element';
 export * from './page';
 export * from './editor';
 export * from './actions';
+export * from './dragAndDrop';
+export * from './plugin';

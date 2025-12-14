@@ -1,31 +1,11 @@
-import { CSSProperties } from 'react';
 import { User, SiteMember } from './user';
 import { SiteName, ViewMode } from './enums';
 import { Page, HistoryEntry } from './page';
 import { Site } from './site';
 import { BuilderComponent, BuilderElementNode } from './element';
 import { GlobalClass, DesignToken } from './styles';
-
-export interface SnapGuide {
-    id: string;
-    orientation: 'vertical' | 'horizontal';
-    x: number;
-    y: number;
-    length: number;
-}
-
-export interface ContainerHighlight {
-    rect: DOMRect;
-    padding: { top: number; right: number; bottom: number; left: number };
-}
-
-export interface DragOverState {
-  targetId: string;
-  mode: 'before' | 'after' | 'inside';
-  indicatorStyle: CSSProperties;
-  guides: SnapGuide[];
-  containerHighlight: ContainerHighlight | null;
-}
+import { SnapGuide, ContainerHighlight, DragOverState } from './dragAndDrop';
+import { HookContext, Plugin } from './plugin';
 
 export interface EditorState {
   currentUser: User | null;
@@ -65,14 +45,4 @@ export interface EditorState {
   showBottomPanel: boolean;
   activeBottomTab: 'code' | 'logs' | null;
   showCommandPalette: boolean;
-}
-
-export interface HookContext {
-  page: Page;
-  state: EditorState;
-}
-
-export interface Plugin {
-  name: string;
-  onPublish?: (content: BuilderElementNode[], context: HookContext) => Promise<BuilderElementNode[]>;
 }
