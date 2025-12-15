@@ -4,8 +4,8 @@ import { GridCell } from '../../../types';
 interface Props {
   cells: GridCell[];
   activeCell?: GridCell | null;
-  scrollX: number;
-  scrollY: number;
+  iframeOffsetX: number; // New prop for iframe's X position in main viewport
+  iframeOffsetY: number; // New prop for iframe's Y position in main viewport
 }
 
 /**
@@ -13,7 +13,7 @@ interface Props {
  * Renders transparent divs with dashed borders to visualize individual grid cells
  * during drag-and-drop operations, highlighting the active cell under the cursor.
  */
-export default function GridInsertionOverlay({ cells, activeCell, scrollX, scrollY }: Props) {
+export default function GridInsertionOverlay({ cells, activeCell, iframeOffsetX, iframeOffsetY }: Props) {
   if (!cells || cells.length === 0) return null;
 
   return (
@@ -24,19 +24,20 @@ export default function GridInsertionOverlay({ cells, activeCell, scrollX, scrol
         return (
             <div 
             key={`${cell.rowIndex}-${cell.colIndex}`} // Use unique key based on grid position
-            className={`absolute border flex items-center justify-center transition-colors duration-150 ${
+            className={`absolute border-2 flex items-center justify-center transition-colors duration-150 ${
                 isActive 
-                ? 'border-blue-500 bg-blue-500/20' 
-                : 'border-indigo-400/30 bg-indigo-500/5'
+                ? 'border-red-500 bg-red-500/30' // BRIGHT RED for active
+                : 'border-red-500/50 bg-red-500/10' // Softer RED for inactive
             }`}
             style={{
-                top: cell.y + scrollY,
-                left: cell.x + scrollX,
+                // cell.x/y are relative to iframe viewport. Add iframe's offset in main viewport.
+                top: cell.y + iframeOffsetY,
+                left: cell.x + iframeOffsetX,
                 width: cell.width,
                 height: cell.height,
             }}
             >
-                <div className={`text-[8px] font-mono select-none ${isActive ? 'text-blue-700 font-bold opacity-100' : 'text-indigo-400/50 opacity-0'}`}>
+                <div className={`text-[8px] font-mono select-none ${isActive ? 'text-red-700 font-bold opacity-100' : 'text-red-400/50 opacity-0'}`}>
                     {isActive ? `R${cell.rowIndex} C${cell.colIndex}` : `R${cell.rowIndex} C${cell.colIndex}`}
                 </div>
             </div>

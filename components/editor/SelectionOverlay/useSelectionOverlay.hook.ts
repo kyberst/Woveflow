@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useEditor } from '../../../hooks/useEditor';
 
 export function useSelectionOverlay(iframeRef: React.RefObject<HTMLIFrameElement>) {
   const { state, dispatch } = useEditor();
   const [overlayPos, setOverlayPos] = useState<DOMRect | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   const updateOverlay = useCallback(() => {
     if (state.selectedElementId && iframeRef.current) {
@@ -19,18 +20,31 @@ export function useSelectionOverlay(iframeRef: React.RefObject<HTMLIFrameElement
     }
   }, [state.selectedElementId, iframeRef, state.zoom, state.viewMode, state.pages]);
 
+  const scheduleUpdate = useCallback(() => {
+      if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+      }
+      animationFrameRef.current = requestAnimationFrame(updateOverlay);
+  }, [updateOverlay]);
+
   useEffect(() => {
-    const interval = setInterval(updateOverlay, 50); // Fast check for smoother feel
-    window.addEventListener('resize', updateOverlay);
+    // Initial update
+    scheduleUpdate();
+
+    // Attach listeners
+    window.addEventListener('resize', scheduleUpdate);
     const doc = iframeRef.current?.contentDocument;
-    doc?.addEventListener('scroll', updateOverlay);
+    doc?.addEventListener('scroll', scheduleUpdate);
 
     return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', updateOverlay);
-      doc?.removeEventListener('scroll', updateOverlay);
+      // Cleanup
+      if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+      }
+      window.removeEventListener('resize', scheduleUpdate);
+      doc?.removeEventListener('scroll', scheduleUpdate);
     };
-  }, [updateOverlay, iframeRef]);
+  }, [scheduleUpdate, iframeRef]);
   
   const handleAddClick = () => {
     if (!state.selectedElementId) return;

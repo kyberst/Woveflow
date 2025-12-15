@@ -11,9 +11,17 @@ export default function SmartGuidesOverlay({ iframeRef }: Props) {
   if (!dragOverState) return null;
   const { indicatorStyle, guides, containerHighlight, mode, gridCells, activeCell } = dragOverState;
   
+  // Get iframe's position in the main application's viewport
+  const iframeRect = iframeRef.current?.getBoundingClientRect();
+  const iframeOffsetX = iframeRect?.left || 0;
+  const iframeOffsetY = iframeRect?.top || 0;
+
+  // The main indicator's position already needs to account for iframe's viewport position
+  // and its own internal scroll, as indicatorStyle.top/left are iframe-viewport-relative.
+  // This logic is crucial for general indicator, not just grid.
   const win = iframeRef.current?.contentWindow;
-  const scrollX = win?.scrollX || 0;
-  const scrollY = win?.scrollY || 0;
+  const iframeScrollX = win?.scrollX || 0;
+  const iframeScrollY = win?.scrollY || 0;
 
   const style: React.CSSProperties = {
     position: 'absolute', pointerEvents: 'none', zIndex: 100,
@@ -21,8 +29,10 @@ export default function SmartGuidesOverlay({ iframeRef }: Props) {
     backgroundColor: (mode === 'inside' && gridCells && gridCells.length > 0) ? 'transparent' : '#3b82f6', 
     outline: (mode === 'inside' && gridCells && gridCells.length > 0) ? 'none' : (indicatorStyle.outline || 'none'),
     ...indicatorStyle, // Apply other indicator styles, but potentially override for grid
-    top: (indicatorStyle.top as number) + scrollY,
-    left: (indicatorStyle.left as number) + scrollX,
+    // Correct positioning: indicatorStyle.top/left are iframe-viewport-relative.
+    // Add iframe's own absolute position in the main window.
+    top: (indicatorStyle.top as number) + iframeOffsetY,
+    left: (indicatorStyle.left as number) + iframeOffsetX,
   };
 
   // Determine if the main indicator should render its internal blue box/text
@@ -33,16 +43,17 @@ export default function SmartGuidesOverlay({ iframeRef }: Props) {
       {/* Container Highlight (Green padding areas) */}
       {mode === 'inside' && containerHighlight && (
           <>
-            <div className="absolute bg-green-500/20 z-40" style={{ top: containerHighlight.rect.top + scrollY, left: containerHighlight.rect.left + scrollX, width: containerHighlight.rect.width, height: containerHighlight.padding.top }} />
-            <div className="absolute bg-green-500/20 z-40" style={{ top: containerHighlight.rect.bottom + scrollY - containerHighlight.padding.bottom, left: containerHighlight.rect.left + scrollX, width: containerHighlight.rect.width, height: containerHighlight.padding.bottom }} />
-            <div className="absolute bg-green-500/20 z-40" style={{ top: containerHighlight.rect.top + scrollY + containerHighlight.padding.top, left: containerHighlight.rect.left + scrollX, width: containerHighlight.padding.left, height: containerHighlight.rect.height - containerHighlight.padding.top - containerHighlight.padding.bottom }} />
-            <div className="absolute bg-green-500/20 z-40" style={{ top: containerHighlight.rect.top + scrollY + containerHighlight.padding.top, left: containerHighlight.rect.right + scrollX - containerHighlight.padding.right, width: containerHighlight.padding.right, height: containerHighlight.rect.height - containerHighlight.padding.top - containerHighlight.padding.bottom }} />
+            {/* These already assume SmartGuidesOverlay is positioned at top:0, left:0 of main window */}
+            <div className="absolute bg-green-500/20 z-40" style={{ top: containerHighlight.rect.top + iframeOffsetY, left: containerHighlight.rect.left + iframeOffsetX, width: containerHighlight.rect.width, height: containerHighlight.padding.top }} />
+            <div className="absolute bg-green-500/20 z-40" style={{ top: containerHighlight.rect.bottom + iframeOffsetY - containerHighlight.padding.bottom, left: containerHighlight.rect.left + iframeOffsetX, width: containerHighlight.rect.width, height: containerHighlight.padding.bottom }} />
+            <div className="absolute bg-green-500/20 z-40" style={{ top: containerHighlight.rect.top + iframeOffsetY + containerHighlight.padding.top, left: containerHighlight.rect.left + iframeOffsetX, width: containerHighlight.padding.left, height: containerHighlight.rect.height - containerHighlight.padding.top - containerHighlight.padding.bottom }} />
+            <div className="absolute bg-green-500/20 z-40" style={{ top: containerHighlight.rect.top + iframeOffsetY + containerHighlight.padding.top, left: containerHighlight.rect.right + iframeOffsetX - containerHighlight.padding.right, width: containerHighlight.padding.right, height: containerHighlight.rect.height - containerHighlight.padding.top - containerHighlight.padding.bottom }} />
           </>
       )}
 
       {/* Grid Cell Visualization (Ghost Grid) */}
       {mode === 'inside' && gridCells && gridCells.length > 0 && (
-          <GridInsertionOverlay cells={gridCells} activeCell={activeCell} scrollX={scrollX} scrollY={scrollY} />
+          <GridInsertionOverlay cells={gridCells} activeCell={activeCell} iframeOffsetX={iframeOffsetX} iframeOffsetY={iframeOffsetY} />
       )}
 
       {/* Main Drop Indicator (Blue Line or Box) - Active Target */}
@@ -64,7 +75,7 @@ export default function SmartGuidesOverlay({ iframeRef }: Props) {
 
       {/* Alignment Guides (Red Lines) */}
       {guides?.map(g => (
-          <div key={g.id} className="absolute border-l border-red-500 border-dashed z-50 opacity-80" style={{ left: g.x + scrollX, top: g.y + scrollY, height: g.length, width: 1 }} />
+          <div key={g.id} className="absolute border-l border-red-500 border-dashed z-50 opacity-80" style={{ left: g.x + iframeOffsetX, top: g.y + iframeOffsetY, height: g.length, width: 1 }} />
       ))}
     </>
   );
