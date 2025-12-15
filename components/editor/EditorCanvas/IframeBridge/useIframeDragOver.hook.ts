@@ -18,7 +18,8 @@ export const useIframeDragOver = (iframeRef: React.RefObject<HTMLIFrameElement>)
 
       const rect = targetEl.getBoundingClientRect();
       const y = e.clientY - rect.top;
-      // const x = e.clientX - rect.left; // Not strictly used if we use viewport coords for matching
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
       const isContainer = CONTAINER_TAGS.includes(targetEl.tagName.toLowerCase());
       const computed = doc.defaultView?.getComputedStyle(targetEl);
       const isGrid = computed?.display === 'grid';
@@ -35,10 +36,8 @@ export const useIframeDragOver = (iframeRef: React.RefObject<HTMLIFrameElement>)
       if (isContainer && isGrid) {
           mode = 'inside';
           
-          // Parse grid tracks (handling 'none' or space-separated pixel values)
           const parseTracks = (val: string) => {
               if (!val || val === 'none') return [];
-              // Simple split by space, computed styles usually return "px" values separated by spaces
               return val.split(/\s+/).map(v => parseFloat(v));
           };
 
@@ -47,19 +46,16 @@ export const useIframeDragOver = (iframeRef: React.RefObject<HTMLIFrameElement>)
           const colGap = parseFloat(computed.columnGap) || 0;
           const rowGap = parseFloat(computed.rowGap) || 0;
 
-          // Offsets for content box relative to the element's bounding box
           const borderLeft = parseFloat(computed.borderLeftWidth) || 0;
           const borderTop = parseFloat(computed.borderTopWidth) || 0;
           const paddingLeft = parseFloat(computed.paddingLeft) || 0;
           const paddingTop = parseFloat(computed.paddingTop) || 0;
 
-          // Starting coordinate relative to viewport (using rect)
           const startX = rect.left + borderLeft + paddingLeft;
           const startY = rect.top + borderTop + paddingTop;
 
           let currentY = startY;
           
-          // Calculate all cells
           for(let r = 0; r < rowTracks.length; r++) {
               const h = rowTracks[r];
               let currentX = startX;
@@ -67,11 +63,16 @@ export const useIframeDragOver = (iframeRef: React.RefObject<HTMLIFrameElement>)
               for(let c = 0; c < colTracks.length; c++) {
                   const w = colTracks[c];
                   
-                  gridCells.push({
+                  // This is the actual renderable cell area, excluding gaps.
+                  const cellRect = {
                       x: currentX,
                       y: currentY,
                       width: w,
                       height: h,
+                  };
+
+                  gridCells.push({
+                      ...cellRect,
                       rowIndex: r + 1, // CSS Grid is 1-based
                       colIndex: c + 1
                   });
@@ -82,12 +83,9 @@ export const useIframeDragOver = (iframeRef: React.RefObject<HTMLIFrameElement>)
           }
 
           // Match mouse position to cell
-          const mouseX = e.clientX;
-          const mouseY = e.clientY;
-
           const matchedCell = gridCells.find(cell => 
-              mouseX >= cell.x && mouseX <= cell.x + cell.width + (colGap/2) && // approximate gap inclusion
-              mouseY >= cell.y && mouseY <= cell.y + cell.height + (rowGap/2)
+              mouseX >= cell.x && mouseX <= cell.x + cell.width &&
+              mouseY >= cell.y && mouseY <= cell.y + cell.height
           );
 
           if (matchedCell) {
@@ -103,8 +101,8 @@ export const useIframeDragOver = (iframeRef: React.RefObject<HTMLIFrameElement>)
                    zIndex: 50 
                };
           } else {
-               // Fallback if hovering gap or padding
-               indicatorStyle = { top: rect.top, left: rect.left, width: rect.width, height: rect.height, outline: '2px solid #3b82f6', outlineOffset: '-1px', zIndex: 50 };
+               // Fallback if hovering gap or padding, highlight the whole container lightly
+               indicatorStyle = { top: rect.top, left: rect.left, width: rect.width, height: rect.height, outline: '2px solid #3b82f6', outlineOffset: '-1px', zIndex: 50, backgroundColor: 'rgba(59, 130, 246, 0.05)' };
           }
 
       } 

@@ -2,6 +2,7 @@ import { DragEvent } from 'react';
 import { useEditor } from '../../../../hooks/useEditor';
 import { getSystemComponentById } from '../../../../services/componentRegistry';
 import { htmlToJson } from '../../../../utils/htmlToJson';
+import { ViewMode } from '../../../../types';
 
 export const useIframeDrop = () => {
   const { state, dispatch } = useEditor();
@@ -22,7 +23,7 @@ export const useIframeDrop = () => {
           placementStyles = {
               gridColumnStart: activeCell.colIndex,
               gridRowStart: activeCell.rowIndex,
-              // Optional: reset span to default 1 to avoid carrying over massive spans
+              // Default span to 1 to ensure single cell placement
               gridColumnEnd: 'span 1', 
               gridRowEnd: 'span 1'
           };
@@ -38,7 +39,7 @@ export const useIframeDrop = () => {
            
            if (activeCell) {
                payload.newStyles = placementStyles;
-               payload.viewMode = state.viewMode;
+               payload.viewMode = state.viewMode; // Apply to current viewMode override
            }
 
            dispatch({ type: 'MOVE_ELEMENT', payload });
@@ -57,11 +58,11 @@ export const useIframeDrop = () => {
               // Deep copy
               const element = JSON.parse(JSON.stringify(content));
 
-              // Apply Grid Positioning if applicable
+              // Apply Grid Positioning if applicable to the current view mode
               if (activeCell) {
-                  // Merge into existing desktop styles
-                  element.styles.desktop = {
-                      ...element.styles.desktop,
+                  // Ensure styles object for the current view mode exists
+                  element.styles[state.viewMode] = {
+                      ...(element.styles[state.viewMode] || {}),
                       ...placementStyles
                   };
               }

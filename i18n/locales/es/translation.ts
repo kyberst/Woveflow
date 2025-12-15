@@ -101,5 +101,6 @@ export default {
   "gridChildOptions": "Ítem de Rejilla",
   "span1": "Ocupar 1 Col",
   "span2": "Ocupar 2 Cols",
-  "spanFull": "Ancho Completo"
+  "spanFull": "Ancho Completo",
+  "tplRows": "Filas de Plantilla"
 };

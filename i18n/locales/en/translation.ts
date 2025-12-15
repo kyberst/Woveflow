@@ -101,5 +101,6 @@ export default {
   "gridChildOptions": "Grid Item",
   "span1": "Span 1 Col",
   "span2": "Span 2 Cols",
-  "spanFull": "Span Full Width"
+  "spanFull": "Span Full Width",
+  "tplRows": "Template Rows"
 };

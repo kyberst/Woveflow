@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEditor } from '../../../hooks/useEditor';
-import GridDropZones from './GridDropZones';
+import GridInsertionOverlay from './GridInsertionOverlay'; // Updated import
 
 interface Props { iframeRef: React.RefObject<HTMLIFrameElement>; }
 
@@ -17,11 +17,16 @@ export default function SmartGuidesOverlay({ iframeRef }: Props) {
 
   const style: React.CSSProperties = {
     position: 'absolute', pointerEvents: 'none', zIndex: 100,
-    backgroundColor: mode !== 'inside' ? '#3b82f6' : 'transparent', 
-    ...indicatorStyle,
+    // Adjust background/outline for the main indicator when gridCells are present
+    backgroundColor: (mode === 'inside' && gridCells && gridCells.length > 0) ? 'transparent' : '#3b82f6', 
+    outline: (mode === 'inside' && gridCells && gridCells.length > 0) ? 'none' : (indicatorStyle.outline || 'none'),
+    ...indicatorStyle, // Apply other indicator styles, but potentially override for grid
     top: (indicatorStyle.top as number) + scrollY,
     left: (indicatorStyle.left as number) + scrollX,
   };
+
+  // Determine if the main indicator should render its internal blue box/text
+  const shouldRenderMainIndicatorContent = mode === 'inside' && (!gridCells || gridCells.length === 0);
 
   return (
     <>
@@ -37,7 +42,7 @@ export default function SmartGuidesOverlay({ iframeRef }: Props) {
 
       {/* Grid Cell Visualization (Ghost Grid) */}
       {mode === 'inside' && gridCells && gridCells.length > 0 && (
-          <GridDropZones cells={gridCells} activeCell={activeCell} scrollX={scrollX} scrollY={scrollY} />
+          <GridInsertionOverlay cells={gridCells} activeCell={activeCell} scrollX={scrollX} scrollY={scrollY} />
       )}
 
       {/* Main Drop Indicator (Blue Line or Box) - Active Target */}
@@ -48,7 +53,7 @@ export default function SmartGuidesOverlay({ iframeRef }: Props) {
                 <div className="absolute right-0 top-1/2 translate-x-1/2 w-2 h-2 bg-white border-2 border-blue-500 rounded-full" />
               </>
           )}
-          {mode === 'inside' && (
+          {shouldRenderMainIndicatorContent && ( // Only render this content if NOT actively hovering a grid
               <div className="w-full h-full border-2 border-blue-500 border-dashed bg-blue-500/10 flex items-center justify-center">
                   <div className="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded shadow-sm">
                       {activeCell ? `Cell ${activeCell.rowIndex}x${activeCell.colIndex}` : 'Drop Here'}

@@ -108,15 +108,26 @@ export default function GridSettings({ node, viewMode }: Props) {
                                 placeholder="e.g. 1rem"
                             />
                         </div>
-                         {/* Manual Template */}
+                         {/* Manual Columns Template */}
                          <div className="flex items-center space-x-2">
-                            <label className="text-[10px] uppercase text-slate-500 font-bold w-8">Tpl</label>
+                            <label className="text-[10px] uppercase text-slate-500 font-bold w-8">Tpl Col</label>
                             <input 
                                 type="text" 
                                 value={getStyle(node, 'gridTemplateColumns')} 
                                 onChange={(e) => updateStyle(node.id, 'gridTemplateColumns', e.target.value)}
                                 className="flex-1 text-xs p-1 border rounded dark:bg-slate-800 dark:border-slate-600"
                                 placeholder="e.g. 1fr 200px"
+                            />
+                        </div>
+                         {/* Manual Rows Template */}
+                         <div className="flex items-center space-x-2">
+                            <label className="text-[10px] uppercase text-slate-500 font-bold w-8">{t('tplRows')}</label>
+                            <input 
+                                type="text" 
+                                value={getStyle(node, 'gridTemplateRows')} 
+                                onChange={(e) => updateStyle(node.id, 'gridTemplateRows', e.target.value)}
+                                className="flex-1 text-xs p-1 border rounded dark:bg-slate-800 dark:border-slate-600"
+                                placeholder="e.g. 100px auto 1fr"
                             />
                         </div>
                     </div>
@@ -131,7 +142,7 @@ export default function GridSettings({ node, viewMode }: Props) {
                     <div className="space-y-2">
                         {/* Column Span */}
                         <div className="flex items-center space-x-2">
-                            <label className="text-[10px] uppercase text-slate-500 font-bold w-8">Span</label>
+                            <label className="text-[10px] uppercase text-slate-500 font-bold w-8">Col Span</label>
                             <div className="flex-1 grid grid-cols-4 gap-1">
                                 <button onClick={() => updateStyle(node.id, 'gridColumn', 'span 1')} className="px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">1</button>
                                 <button onClick={() => updateStyle(node.id, 'gridColumn', 'span 2')} className="px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">2</button>
@@ -140,6 +151,19 @@ export default function GridSettings({ node, viewMode }: Props) {
                                 <button onClick={() => updateStyle(node.id, 'gridColumn', 'span 6')} className="px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">6</button>
                                 <button onClick={() => updateStyle(node.id, 'gridColumn', 'span 12')} className="px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">12</button>
                                 <button onClick={() => updateStyle(node.id, 'gridColumn', '1 / -1')} className="col-span-2 px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">Full Row</button>
+                            </div>
+                        </div>
+                        {/* Row Span */}
+                         <div className="flex items-center space-x-2">
+                            <label className="text-[10px] uppercase text-slate-500 font-bold w-8">Row Span</label>
+                            <div className="flex-1 grid grid-cols-4 gap-1">
+                                <button onClick={() => updateStyle(node.id, 'gridRow', 'span 1')} className="px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">1</button>
+                                <button onClick={() => updateStyle(node.id, 'gridRow', 'span 2')} className="px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">2</button>
+                                <button onClick={() => updateStyle(node.id, 'gridRow', 'span 3')} className="px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">3</button>
+                                <button onClick={() => updateStyle(node.id, 'gridRow', 'span 4')} className="px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">4</button>
+                                <button onClick={() => updateStyle(node.id, 'gridRow', 'span 6')} className="px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">6</button>
+                                <button onClick={() => updateStyle(node.id, 'gridRow', 'span 12')} className="px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">12</button>
+                                <button onClick={() => updateStyle(node.id, 'gridRow', '1 / -1')} className="col-span-2 px-1 py-1 text-[10px] bg-white dark:bg-slate-800 border rounded hover:bg-indigo-50">Full Col</button>
                             </div>
                         </div>
                         {/* Manual Grid Column */}

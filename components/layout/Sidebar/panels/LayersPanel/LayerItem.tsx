@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, DragEvent } from 'react';
 import { BuilderElementNode, ViewMode } from '../../../../../types';
 import { useEditor } from '../../../../../hooks/useEditor';
-import { ChevronRight, ChevronDown, Box, Type, Image as ImageIcon, Layout, GripVertical, Grid3x3, Eye, EyeOff, Trash2, Columns } from 'lucide-react';
+import { ChevronRight, ChevronDown, GripVertical, Eye, EyeOff, Trash2, ChevronUp, ChevronDown as ChevronDownIcon } from 'lucide-react'; // Renamed ChevronDown to ChevronDownIcon to avoid conflict
 import { getSystemComponentById } from '../../../../../services/componentRegistry';
+import { getIcon as getElementIcon } from '../../../../../utils/iconMapping'; // Import the global getIcon
 
 interface Props { 
     node: BuilderElementNode | string; 
@@ -10,21 +11,6 @@ interface Props {
     index: number;
     parentId: string | null;
 }
-
-const getIcon = (node: BuilderElementNode) => {
-    if (node.tag === 'img') return <ImageIcon size={12} className="text-purple-500" />;
-    if (['p','h1','h2','h3','h4','h5','h6','span','strong','em'].includes(node.tag)) return <Type size={12} className="text-slate-500" />;
-    
-    // Check for Grid/Flex
-    const isGrid = node.styles?.desktop?.display === 'grid';
-    const isFlex = node.styles?.desktop?.display === 'flex';
-    
-    if (isGrid) return <Grid3x3 size={12} className="text-indigo-500" />;
-    if (isFlex) return <Columns size={12} className="text-emerald-500" />; // Generic flex icon
-    
-    if (['div','section','main','header','footer'].includes(node.tag)) return <Layout size={12} className="text-blue-500" />;
-    return <Box size={12} className="text-slate-400" />;
-};
 
 const CONTAINER_TAGS = ['div', 'section', 'main', 'header', 'footer', 'article', 'aside', 'form', 'ul', 'ol', 'nav', 'blockquote'];
 
@@ -94,6 +80,25 @@ export default function LayerItem({ node, depth = 0, index, parentId }: Props) {
             dispatch({ type: 'ADD_HISTORY' });
         }
     };
+    
+    const handleZIndexChange = (increment: number) => {
+        const currentZIndexStr = (node.styles[state.viewMode]?.zIndex || node.styles.desktop?.zIndex || '0') as string;
+        let currentZIndex = parseInt(currentZIndexStr);
+        if (isNaN(currentZIndex)) currentZIndex = 0; // Default to 0 if not a number
+
+        const newZIndex = currentZIndex + increment;
+        
+        dispatch({ 
+            type: 'UPDATE_ELEMENT_STYLE', 
+            payload: { 
+                elementId: node.id, 
+                property: 'zIndex', 
+                value: String(newZIndex), 
+                viewMode: state.viewMode 
+            } 
+        });
+        dispatch({ type: 'ADD_HISTORY' });
+    };
 
     // --- DRAG & DROP LOGIC ---
 
@@ -154,7 +159,7 @@ export default function LayerItem({ node, depth = 0, index, parentId }: Props) {
                         position: position as 'before' | 'after' | 'inside' 
                     } 
                 });
-                dispatch({ type: 'ADD_HISTORY' });
+                dispatch({ type: 'ADD_HISTORY' }); // Add history after successful move
             } else if (parsed.id) {
                 // Dragging a new component from component panel
                 // We need to implement ADD logic for components dropped on the tree.
@@ -184,6 +189,7 @@ export default function LayerItem({ node, depth = 0, index, parentId }: Props) {
                 onDragLeave={() => setDropPosition('none')}
                 onDrop={handleDrop}
                 onClick={(e) => { e.stopPropagation(); dispatch({ type: 'SET_SELECTED_ELEMENT', payload: node.id }); }}
+                onContextMenu={(e) => { e.preventDefault(); dispatch({ type: 'SHOW_CONTEXT_MENU', payload: { x: e.clientX, y: e.clientY, elementId: node.id } }); }}
                 className={`
                     group relative flex items-center py-1.5 pr-2 cursor-pointer transition-colors text-sm border-l-2
                     ${isSelected ? 'bg-blue-100 dark:bg-blue-900/40 border-l-blue-600' : 'border-l-transparent hover:bg-gray-100 dark:hover:bg-slate-800'}
@@ -204,7 +210,7 @@ export default function LayerItem({ node, depth = 0, index, parentId }: Props) {
                 </div>
 
                 {/* Icon */}
-                <div className="mr-2 opacity-80">{getIcon(node)}</div>
+                <div className="mr-2 opacity-80">{getElementIcon(node)}</div>
 
                 {/* Label */}
                 <span className={`text-xs font-medium truncate flex-grow ${isSelected ? 'text-blue-700 dark:text-blue-200' : 'text-slate-700 dark:text-slate-300'}`}>
@@ -213,7 +219,25 @@ export default function LayerItem({ node, depth = 0, index, parentId }: Props) {
                 </span>
 
                 {/* Hover Actions */}
-                <div className="hidden group-hover:flex items-center space-x-1 ml-2">
+                <div className="flex items-center space-x-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {isSelected && ( // Z-index controls visible only when selected
+                        <>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleZIndexChange(1); }} 
+                                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500"
+                                title="Increase z-index"
+                            >
+                                <ChevronUp size={10} />
+                            </button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleZIndexChange(-1); }} 
+                                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500"
+                                title="Decrease z-index"
+                            >
+                                <ChevronDownIcon size={10} />
+                            </button>
+                        </>
+                    )}
                     <button onClick={handleToggleVisibility} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500">
                         {isHidden ? <EyeOff size={10} /> : <Eye size={10} />}
                     </button>
