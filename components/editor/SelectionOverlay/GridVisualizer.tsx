@@ -63,13 +63,19 @@ export default function GridVisualizer({ iframeRef, overlayPos }: Props) {
     const offsetX = targetRect.left - overlayPos.left;
     const offsetY = targetRect.top - overlayPos.top;
 
+    // These values are now relative to the targetGrid's top-left corner (its own content box)
+    const borderLeft = parseFloat(computed.borderLeftWidth) || 0;
+    const borderTop = parseFloat(computed.borderTopWidth) || 0;
+    const paddingLeft = parseFloat(computed.paddingLeft) || 0;
+    const paddingTop = parseFloat(computed.paddingTop) || 0;
+
     return { 
         cols, rows, colGap, rowGap, 
         offsetX, offsetY, 
         width: targetRect.width, 
         height: targetRect.height,
-        paddingLeft: parseFloat(computed.paddingLeft) || 0,
-        paddingTop: parseFloat(computed.paddingTop) || 0,
+        initialContentX: borderLeft + paddingLeft, // Start X for content area, relative to targetGrid's border-box top-left
+        initialContentY: borderTop + paddingTop, // Start Y for content area, relative to targetGrid's border-box top-left
         targetId: tId
     };
   }, [selectedElementId, iframeRef, overlayPos, activeGridId, state.pages]); // Re-calc when content changes
@@ -130,18 +136,18 @@ export default function GridVisualizer({ iframeRef, overlayPos }: Props) {
 
   if (!gridData) return null;
 
-  const { cols, rows, colGap, rowGap, offsetX, offsetY, width, height, paddingLeft, paddingTop } = gridData;
+  const { cols, rows, colGap, rowGap, offsetX, offsetY, width, height, initialContentX, initialContentY } = gridData;
 
   // Render Vertical Lines (Columns) & Resize Handles
   const renderVerticalLines = () => {
-    let currentX = paddingLeft;
+    let currentX = initialContentX; // This is now relative to the GridVisualizer's wrapper (targetGrid's top-left)
     const elements = [];
 
     // Loop through columns to draw boundaries and handles
     for (let i = 0; i < cols.length; i++) {
         const trackWidth = cols[i];
         
-        // The right edge of the current column
+        // The right edge of the current column, relative to the GridVisualizer's wrapper
         const lineLeft = currentX + trackWidth;
         
         // 1. Visual Divider Line
@@ -194,10 +200,11 @@ export default function GridVisualizer({ iframeRef, overlayPos }: Props) {
 
   // Render Horizontal Lines (Rows) - Visualization only
   const renderHorizontalLines = () => {
-    let currentY = paddingTop;
+    let currentY = initialContentY; // This is now relative to the GridVisualizer's wrapper (targetGrid's top-left)
     return rows.map((trackHeight, i) => {
         const els = [];
         
+        // The bottom edge of the current row, relative to the GridVisualizer's wrapper
         const lineTop = currentY + trackHeight;
         
         els.push(
@@ -225,8 +232,8 @@ export default function GridVisualizer({ iframeRef, overlayPos }: Props) {
             left: offsetX,
             width: width,
             height: height,
-            // Outline the whole grid container lightly
-            outline: '1px solid rgba(99, 102, 241, 0.2)',
+            // Outline the whole grid container lightly, as requested
+            outline: '1px solid rgba(99, 102, 241, 0.5)',
         }}
     >
         {renderVerticalLines()}

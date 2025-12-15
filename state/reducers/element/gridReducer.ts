@@ -81,9 +81,15 @@ export const gridReducer = (state: EditorState, action: Action): EditorState => 
                 // Update gridColumn (property) with the new span value
                 (styleToUpdate as any)[property] = value;
                 
-                // Remove explicit width if it exists, to allow the span to take control
+                // Remove explicit width, maxWidth, flexBasis if they exist, to allow the span to take control
                 if (styleToUpdate.width) {
                     delete styleToUpdate.width;
+                }
+                if (styleToUpdate.maxWidth) { // Added this
+                    delete styleToUpdate.maxWidth;
+                }
+                if (styleToUpdate.flexBasis) { // Added this
+                    delete styleToUpdate.flexBasis;
                 }
                 
                 return {

@@ -12,7 +12,8 @@ export const useIframeDragOver = (iframeRef: React.RefObject<HTMLIFrameElement>)
       e.preventDefault();
       const doc = iframeRef.current?.contentDocument;
       if (!doc) return;
-      const targetEl = (doc.elementFromPoint(e.clientX, e.clientY) as HTMLElement)?.closest('[data-builder-id]') as HTMLElement;
+      
+      let targetEl = (doc.elementFromPoint(e.clientX, e.clientY) as HTMLElement)?.closest('[data-builder-id]') as HTMLElement;
       
       if (!targetEl) { dispatch({ type: 'SET_DRAG_OVER_STATE', payload: null }); return; }
 
@@ -21,8 +22,29 @@ export const useIframeDragOver = (iframeRef: React.RefObject<HTMLIFrameElement>)
       const mouseX = e.clientX;
       const mouseY = e.clientY;
       const isContainer = CONTAINER_TAGS.includes(targetEl.tagName.toLowerCase());
-      const computed = doc.defaultView?.getComputedStyle(targetEl);
-      const isGrid = computed?.display === 'grid';
+      
+      let gridContainerEl: HTMLElement | null = null;
+      let isGrid = false;
+
+      // --- CORRECCIÓN CRÍTICA AQUÍ ---
+      // Si el elemento actual NO es grid, revisamos si su PADRE inmediato es grid.
+      const targetElComputed = doc.defaultView?.getComputedStyle(targetEl);
+      if (targetElComputed?.display === 'grid') {
+          gridContainerEl = targetEl;
+          isGrid = true;
+      } else if (targetEl.parentElement) {
+          const parent = targetEl.parentElement;
+          const parentComputed = doc.defaultView?.getComputedStyle(parent);
+          if (parentComputed?.display === 'grid') {
+              gridContainerEl = parent;
+              isGrid = true;
+          }
+      }
+      // --------------------------------
+
+      // Still need original target's computed for padding/margins in standard logic if it's not a grid.
+      // If a gridContainerEl was found, use its computed styles for grid properties.
+      const computed = doc.defaultView?.getComputedStyle(targetEl); 
       
       // Thresholds
       const threshold = isContainer ? rect.height * 0.25 : rect.height * 0.5;
@@ -31,28 +53,33 @@ export const useIframeDragOver = (iframeRef: React.RefObject<HTMLIFrameElement>)
       let indicatorStyle: CSSProperties = {};
       let gridCells: GridCell[] = [];
       let activeCell: GridCell | null = null;
+      let finalTargetId = targetEl.dataset.builderId!;
 
       // --- GRID SNAPPING LOGIC ---
-      if (isContainer && isGrid) {
+      if (isGrid && gridContainerEl) {
           mode = 'inside';
-          
+          finalTargetId = gridContainerEl.dataset.builderId!; // Target is now the grid container
+
+          const gridComputed = doc.defaultView?.getComputedStyle(gridContainerEl);
+          const gridRect = gridContainerEl.getBoundingClientRect();
+
           const parseTracks = (val: string) => {
               if (!val || val === 'none') return [];
               return val.split(/\s+/).map(v => parseFloat(v));
           };
 
-          const colTracks = parseTracks(computed.gridTemplateColumns);
-          const rowTracks = parseTracks(computed.gridTemplateRows);
-          const colGap = parseFloat(computed.columnGap) || 0;
-          const rowGap = parseFloat(computed.rowGap) || 0;
+          const colTracks = parseTracks(gridComputed.gridTemplateColumns);
+          const rowTracks = parseTracks(gridComputed.gridTemplateRows);
+          const colGap = parseFloat(gridComputed.columnGap) || 0;
+          const rowGap = parseFloat(gridComputed.rowGap) || 0;
 
-          const borderLeft = parseFloat(computed.borderLeftWidth) || 0;
-          const borderTop = parseFloat(computed.borderTopWidth) || 0;
-          const paddingLeft = parseFloat(computed.paddingLeft) || 0;
-          const paddingTop = parseFloat(computed.paddingTop) || 0;
+          const borderLeft = parseFloat(gridComputed.borderLeftWidth) || 0;
+          const borderTop = parseFloat(gridComputed.borderTopWidth) || 0;
+          const paddingLeft = parseFloat(gridComputed.paddingLeft) || 0;
+          const paddingTop = parseFloat(gridComputed.paddingTop) || 0;
 
-          const startX = rect.left + borderLeft + paddingLeft;
-          const startY = rect.top + borderTop + paddingTop;
+          const startX = gridRect.left + borderLeft + paddingLeft;
+          const startY = gridRect.top + borderTop + paddingTop;
 
           let currentY = startY;
           
@@ -101,8 +128,8 @@ export const useIframeDragOver = (iframeRef: React.RefObject<HTMLIFrameElement>)
                    zIndex: 50 
                };
           } else {
-               // Fallback if hovering gap or padding, highlight the whole container lightly
-               indicatorStyle = { top: rect.top, left: rect.left, width: rect.width, height: rect.height, outline: '2px solid #3b82f6', outlineOffset: '-1px', zIndex: 50, backgroundColor: 'rgba(59, 130, 246, 0.05)' };
+               // Fallback if hovering gap or padding, highlight the whole grid container lightly
+               indicatorStyle = { top: gridRect.top, left: gridRect.left, width: gridRect.width, height: gridRect.height, outline: '2px solid #3b82f6', outlineOffset: '-1px', zIndex: 50, backgroundColor: 'rgba(59, 130, 246, 0.05)' };
           }
 
       } 
@@ -117,10 +144,10 @@ export const useIframeDragOver = (iframeRef: React.RefObject<HTMLIFrameElement>)
           indicatorStyle = { top: mode === 'before' ? rect.top : rect.bottom, left: rect.left, width: rect.width, height: '4px' };
       }
 
-      // Calculate Smart Guides (Red lines)
+      // Calculate Smart Guides (Red lines) using the original targetEl
       const { guides, containerHighlight } = calculateSnapping(rect, targetEl, doc);
       
-      dispatch({ type: 'SET_DRAG_OVER_STATE', payload: { targetId: targetEl.dataset.builderId!, mode, indicatorStyle, guides, containerHighlight, gridCells, activeCell } });
+      dispatch({ type: 'SET_DRAG_OVER_STATE', payload: { targetId: finalTargetId, mode, indicatorStyle, guides, containerHighlight, gridCells, activeCell } });
   };
   
   const throttledDragOver = throttle(handleDragOver, 60);

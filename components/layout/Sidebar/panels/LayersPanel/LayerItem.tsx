@@ -4,6 +4,7 @@ import { useEditor } from '../../../../../hooks/useEditor';
 import { ChevronRight, ChevronDown, GripVertical, Eye, EyeOff, Trash2, ChevronUp, ChevronDown as ChevronDownIcon } from 'lucide-react'; // Renamed ChevronDown to ChevronDownIcon to avoid conflict
 import { getSystemComponentById } from '../../../../../services/componentRegistry';
 import { getIcon as getElementIcon } from '../../../../../utils/iconMapping'; // Import the global getIcon
+import { htmlToJson } from '../../../../../utils/htmlToJson'; // Import htmlToJson for converting HTML content
 
 interface Props { 
     node: BuilderElementNode | string; 
@@ -104,14 +105,19 @@ export default function LayerItem({ node, depth = 0, index, parentId }: Props) {
 
     const handleDragStart = (e: DragEvent) => {
         e.stopPropagation();
-        e.dataTransfer.setData('application/json', JSON.stringify({ layerId: node.id }));
-        e.dataTransfer.effectAllowed = 'move';
-        dispatch({ type: 'SET_IS_DRAGGING', payload: true });
+        // Ensure we are dragging a node from the layer panel
+        if (typeof node !== 'string') {
+            e.dataTransfer.setData('application/json', JSON.stringify({ layerId: node.id }));
+            e.dataTransfer.effectAllowed = 'move';
+            dispatch({ type: 'SET_IS_DRAGGING', payload: true });
+        }
     };
 
     const handleDragOver = (e: DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (!state.isDragging) return; // Only show indicators if something is actively being dragged
 
         const rect = e.currentTarget.getBoundingClientRect();
         const y = e.clientY - rect.top;
@@ -140,40 +146,56 @@ export default function LayerItem({ node, depth = 0, index, parentId }: Props) {
 
         try {
             const parsed = JSON.parse(data);
-            if (parsed.layerId === node.id) return; // Ignore self-drop
+            const targetElementId = node.id;
+            const position = dropPosition;
 
-            // Determine target ID and Position
-            let targetId = node.id;
-            let position = dropPosition;
-
-            // If dropping 'inside', target is THIS node.
-            // If dropping 'before' or 'after', target is THIS node (sibling logic handled by reducer).
-            
-            // Dispatch Move
             if (parsed.layerId) {
+                // --- MOVE EXISTING ELEMENT FROM LAYER PANEL ---
+                if (parsed.layerId === targetElementId) return; // Ignore self-drop
+
                 dispatch({ 
                     type: 'MOVE_ELEMENT', 
                     payload: { 
                         elementId: parsed.layerId, 
-                        targetId: targetId, 
+                        targetId: targetElementId, 
                         position: position as 'before' | 'after' | 'inside' 
                     } 
                 });
-                dispatch({ type: 'ADD_HISTORY' }); // Add history after successful move
             } else if (parsed.id) {
-                // Dragging a new component from component panel
-                // We need to implement ADD logic for components dropped on the tree.
-                // Re-using ADD_ELEMENT action which handles targetId/mode similar to Move.
-                const comp = state.components.find(c => c.id === parsed.id) || 
-                             getSystemComponentById(parsed.id);
-                             
-                // Note: Async import inside handler is tricky, relying on pre-loaded registry usually.
-                // Assuming components are in state or registry is sync.
-                
-                // For now, simpler: assume dragging existing layers. 
-                // To support new components, we need to wire that up in ComponentItem dragstart.
-            }
+                // --- ADD NEW COMPONENT FROM COMPONENTS PANEL ---
+                const customComp = state.components.find(c => c.id === parsed.id);
+                const systemComp = getSystemComponentById(parsed.id);
+                const comp = customComp || systemComp;
 
+                if (comp) {
+                    let elementContent: BuilderElementNode;
+                    // System components might have content as string HTML, parse it.
+                    if (typeof comp.content === 'string') {
+                        const parsedHtml = htmlToJson(comp.content);
+                        if (parsedHtml.length > 0) {
+                            elementContent = parsedHtml[0]; // Assume single root node for component content
+                        } else {
+                            console.warn("Component content could not be parsed to a BuilderElementNode:", comp.content);
+                            return;
+                        }
+                    } else {
+                        elementContent = comp.content;
+                    }
+                    
+                    // Deep copy to ensure unique IDs for new instances
+                    const newElement = JSON.parse(JSON.stringify(elementContent));
+
+                    dispatch({ 
+                        type: 'ADD_ELEMENT', 
+                        payload: { 
+                            targetId: targetElementId, 
+                            mode: position as 'before' | 'after' | 'inside', 
+                            element: newElement 
+                        } 
+                    });
+                }
+            }
+            dispatch({ type: 'ADD_HISTORY' }); // Add history after successful operation
         } catch (err) {
             console.error("Layer drop failed", err);
         }
@@ -196,7 +218,7 @@ export default function LayerItem({ node, depth = 0, index, parentId }: Props) {
         <div className="select-none">
             <div 
                 ref={itemRef}
-                draggable
+                draggable={typeof node !== 'string'} // Only allow dragging BuilderElementNodes
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragLeave={() => setDropPosition('none')}
