@@ -14,6 +14,8 @@ export default function CodeEditorPanel() {
     const [editorValue, setEditorValue] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isInternalUpdate, setIsInternalUpdate] = useState(false);
+    const [monacoEditor, setMonacoEditor] = useState<any>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
         if (isInternalUpdate) return;
@@ -28,10 +30,9 @@ export default function CodeEditorPanel() {
     const handleEditorChange = (value: string | undefined) => {
         if (!value) return;
         
-        // Strict Validation Rule: No <style> or <script> tags allowed in body content editor
         if (/<style/i.test(value) || /<script/i.test(value)) {
             setError("Security Error: <style> and <script> tags are not allowed in the body editor. Please use the Global Classes or Assets manager.");
-            return; // Block update
+            return;
         } else {
             setError(null);
         }
@@ -57,8 +58,24 @@ export default function CodeEditorPanel() {
         }
     }, 1000)).current;
 
+    const handleEditorDidMount = (editor: any) => {
+        setMonacoEditor(editor);
+    };
+
+    useEffect(() => {
+        if (!containerRef.current || !monacoEditor) return;
+
+        const observer = new ResizeObserver(() => {
+            monacoEditor.layout();
+        });
+
+        observer.observe(containerRef.current);
+
+        return () => observer.disconnect();
+    }, [monacoEditor]);
+
     return (
-        <div className="h-full w-full flex flex-col overflow-hidden bg-[#1e1e1e]">
+        <div ref={containerRef} className="h-full w-full flex flex-col overflow-hidden bg-[#1e1e1e]">
             {error && (
                 <div className="bg-red-900/50 text-red-200 px-4 py-2 text-xs flex items-center">
                     <AlertTriangle size={14} className="mr-2" />
@@ -72,11 +89,12 @@ export default function CodeEditorPanel() {
                     theme="vs-dark"
                     value={editorValue}
                     onChange={handleEditorChange}
+                    onMount={handleEditorDidMount}
                     options={{
                         minimap: { enabled: false },
                         fontSize: 14,
                         wordWrap: 'on',
-                        automaticLayout: true,
+                        automaticLayout: false,
                         padding: { top: 16 }
                     }}
                 />

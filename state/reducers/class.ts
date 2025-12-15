@@ -1,2 +1,3 @@
-// Add an empty export declaration to make this file a valid TypeScript module.
-export {};
+import { classReducer as baseClassReducer } from './class/classReducer';
+
+export const classReducer = baseClassReducer;

@@ -17,7 +17,7 @@ export const dragAndDropReducer = (state: EditorState, action: Action): EditorSt
 
     switch (action.type) {
         case 'MOVE_ELEMENT': {
-            const { elementId, targetId, position } = action.payload;
+            const { elementId, targetId, position, newStyles, viewMode } = action.payload;
             if (elementId === targetId) return state;
             const nodeToMove = findNode(currentPage.content, elementId);
             if (!nodeToMove) return state;
@@ -41,6 +41,25 @@ export const dragAndDropReducer = (state: EditorState, action: Action): EditorSt
                     return newSiblings;
                  });
             }
+
+            // 3. Apply new styles (e.g., Grid placement) if provided
+            if (newStyles && viewMode) {
+                finalContent = updateTree(finalContent, elementId, (node) => {
+                    // We typically apply structure changes to desktop (base) or specific viewMode depending on requirement
+                    // For grid placement, it's often best to apply to the current viewMode override, or desktop if viewMode is desktop
+                    const targetView = viewMode; 
+                    const currentStyles = node.styles[targetView] || {};
+                    
+                    return {
+                        ...node,
+                        styles: {
+                            ...node.styles,
+                            [targetView]: { ...currentStyles, ...newStyles }
+                        }
+                    };
+                });
+            }
+
             return updateCurrentPageContent(state, finalContent);
         }
         default: return state;

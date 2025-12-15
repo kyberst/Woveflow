@@ -17,4 +17,14 @@ export type ElementAction =
   | { type: 'SET_GRID_LAYOUT'; payload: { elementId: string; layout: 'grid' | 'flex'; columns?: number; gap?: string } }
   | { type: 'SET_CONTAINER_LAYOUT'; payload: { elementId: string; styles: CSSProperties; viewMode: ViewMode } }
   | { type: 'UPDATE_CHILD_SPAN'; payload: { elementId: string; property: 'gridColumn'; value: string; viewMode: ViewMode } }
-  | { type: 'RESIZE_GRID_COLUMN'; payload: { elementId: string; index: number; size: string } };
+  | { type: 'RESIZE_GRID_COLUMN'; payload: { elementId: string; index: number; size: string } }
+  | { 
+      type: 'MOVE_ELEMENT'; 
+      payload: { 
+        elementId: string; 
+        targetId: string; 
+        position: 'before' | 'after' | 'inside';
+        newStyles?: CSSProperties; // Added to support grid placement during drop
+        viewMode?: ViewMode;
+      } 
+    };

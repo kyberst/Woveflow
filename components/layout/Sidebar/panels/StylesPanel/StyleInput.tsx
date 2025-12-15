@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useEditor } from '../../../../../hooks/useEditor';
 import { RefreshCw } from 'lucide-react';
+import { useEditor } from '../../../../../hooks/useEditor';
 
 interface Props {
   label: string;
@@ -22,6 +22,11 @@ export default function StyleInput({ label, prop, type, value, options, onStyleC
     const newVal = e.target.value;
     setCurrentValue(newVal);
     onStyleChange(prop, newVal);
+  };
+
+  const handleReset = () => {
+      setCurrentValue(''); 
+      onStyleChange(prop, '');
   };
 
   const renderInput = () => {
@@ -50,7 +55,7 @@ export default function StyleInput({ label, prop, type, value, options, onStyleC
               <label className={`text-xs font-semibold ${isOverridden ? 'text-blue-600' : 'text-slate-600'}`}>{label}</label>
           </div>
           {isOverridden && (
-              <button onClick={() => { setCurrentValue(''); onStyleChange(prop, ''); }} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500">
+              <button onClick={handleReset} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500">
                   <RefreshCw size={10} />
               </button>
           )}

@@ -1,5 +1,6 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { useEditor } from '../../../hooks/useEditor';
+import { GripVertical } from 'lucide-react';
 
 interface Props {
   iframeRef: React.RefObject<HTMLIFrameElement>;
@@ -11,7 +12,7 @@ export default function GridVisualizer({ iframeRef, overlayPos }: Props) {
   const { selectedElementId } = state;
   const [activeGridId, setActiveGridId] = useState<string | null>(null);
 
-  // Memoize grid data calculation to prevent flickering, but depend on DOM updates via ResizeObserver in parent
+  // Memoize grid data calculation to prevent flickering
   const gridData = useMemo(() => {
     if (!selectedElementId || !iframeRef.current?.contentDocument) return null;
     
@@ -44,11 +45,9 @@ export default function GridVisualizer({ iframeRef, overlayPos }: Props) {
     const computed = getComputedStyle(targetGrid);
     const targetRect = targetGrid.getBoundingClientRect();
 
-    // 3. Parse Grid Definition
+    // 3. Parse Grid Definition (Browser returns computed pixels e.g., "100px 200px")
     const parseTracks = (value: string) => {
         if (!value || value === 'none') return [];
-        // Tracks are computed to pixels by the browser (e.g. "100px 200px")
-        // We use a regex to split spaces safely
         return value.split(/\s+/).map(v => parseFloat(v));
     };
 
@@ -60,13 +59,7 @@ export default function GridVisualizer({ iframeRef, overlayPos }: Props) {
 
     // 4. Calculate Offset relative to the SelectionOverlay wrapper
     // The SelectionOverlay is positioned on top of the *selected element* (el).
-    // If we are visualizing the *parent*, we need to offset our drawing.
-    // However, in SelectionOverlay.view.tsx, overlayPos is passed down. 
-    // We render absolute to the *document* or relative to the overlay?
-    // Let's render absolute relative to the overlay wrapper which is at `overlayPos`.
-    
-    // Wait, the parent SelectionOverlay wrapper has top/left set to overlayPos.
-    // If targetGrid !== el, we need to calculate the difference.
+    // We need to draw relative to that overlay position.
     const offsetX = targetRect.left - overlayPos.left;
     const offsetY = targetRect.top - overlayPos.top;
 
@@ -82,7 +75,7 @@ export default function GridVisualizer({ iframeRef, overlayPos }: Props) {
   }, [selectedElementId, iframeRef, overlayPos, activeGridId, state.pages]); // Re-calc when content changes
 
   // --- DRAG LOGIC (Column Resizing) ---
-  const handleRef = useRef<{ index: number, startX: number, startWidth: number } | null>(null);
+  const handleRef = useRef<{ index: number, startX: number, startCols: number[] } | null>(null);
 
   const onHandleMouseDown = (e: React.MouseEvent, index: number) => {
       if (!gridData || !activeGridId) return;
@@ -92,21 +85,23 @@ export default function GridVisualizer({ iframeRef, overlayPos }: Props) {
       handleRef.current = {
           index,
           startX: e.clientX,
-          startWidth: gridData.cols[index]
+          startCols: [...gridData.cols] // Snapshot current pixel widths
       };
       
       document.body.style.cursor = 'col-resize';
       
       const onMove = (moveEvent: MouseEvent) => {
           if (!handleRef.current || !activeGridId) return;
-          const { startX, startWidth } = handleRef.current;
+          const { startX, startCols } = handleRef.current;
           const delta = moveEvent.clientX - startX;
-          const newWidth = Math.max(10, Math.round(startWidth + delta));
+          
+          // Calculate new width for the specific column
+          const newWidth = Math.max(10, Math.round(startCols[index] + delta));
 
-          // Construct new template string using pixels for the dragged column
-          // We must map ALL columns to pixels to maintain structure during drag
-          const newCols = [...gridData.cols];
+          // Construct new template string using pixels for ALL columns to maintain stability
+          const newCols = [...startCols];
           newCols[index] = newWidth;
+          
           const newTemplate = newCols.map(c => `${c}px`).join(' ');
 
           dispatch({ 
@@ -137,63 +132,76 @@ export default function GridVisualizer({ iframeRef, overlayPos }: Props) {
 
   const { cols, rows, colGap, rowGap, offsetX, offsetY, width, height, paddingLeft, paddingTop } = gridData;
 
-  // Render Vertical Lines (Columns)
+  // Render Vertical Lines (Columns) & Resize Handles
   const renderVerticalLines = () => {
     let currentX = paddingLeft;
-    return cols.map((trackWidth, i) => {
-        const els = [];
-        
-        // Column Box (Transparent) - Optional: could highlight on hover
-        // els.push(<div className="absolute top-0 bottom-0 bg-blue-500/5" style={{ left: currentX, width: trackWidth }} />);
+    const elements = [];
 
-        // Track End Line (Right side of column)
+    // Loop through columns to draw boundaries and handles
+    for (let i = 0; i < cols.length; i++) {
+        const trackWidth = cols[i];
+        
+        // The right edge of the current column
         const lineLeft = currentX + trackWidth;
         
-        els.push(
-            <div key={`c-line-${i}`} className="absolute top-0 bottom-0 border-r border-dashed border-indigo-400/50 pointer-events-none z-10" style={{ left: lineLeft }} />
+        // 1. Visual Divider Line
+        elements.push(
+            <div 
+                key={`c-line-${i}`} 
+                className="absolute top-0 bottom-0 border-r border-dashed border-indigo-400/30 pointer-events-none z-10" 
+                style={{ left: lineLeft }} 
+            />
         );
 
-        // RESIZE HANDLE
-        // We place a handle at the end of the column.
-        if (i < cols.length) { // Allow resizing all columns for now
-             els.push(
-                 <div
-                    key={`h-${i}`}
-                    onMouseDown={(e) => onHandleMouseDown(e, i)}
-                    className="absolute top-0 bottom-0 w-4 cursor-col-resize z-50 flex flex-col justify-center items-center group pointer-events-auto hover:bg-indigo-500/10 transition-colors"
-                    style={{ left: lineLeft - 2 }} // Centered on the line
-                    title={`Resize Column ${i + 1}`}
-                 >
-                     <div className="w-1 h-6 bg-indigo-400 group-hover:bg-indigo-600 rounded-full shadow-sm" />
+        // 2. Resize Handle (Only if not the very last edge, or if we want to allow resizing the last col width explicitly)
+        // Usually grid handles are between columns. 
+        // We allow resizing all columns.
+        elements.push(
+             <div
+                key={`h-${i}`}
+                onMouseDown={(e) => onHandleMouseDown(e, i)}
+                className="absolute top-0 bottom-0 w-4 -ml-2 cursor-col-resize z-50 flex flex-col justify-center items-center group pointer-events-auto hover:bg-indigo-500/10 transition-colors"
+                style={{ left: lineLeft }}
+                title={`Resize Column ${i + 1} (${Math.round(trackWidth)}px)`}
+             >
+                 <div className="w-1 h-4 bg-indigo-400 group-hover:bg-indigo-600 rounded-full shadow-sm transition-all group-hover:h-8 group-hover:w-1.5 flex items-center justify-center">
+                    <GripVertical size={8} className="text-white opacity-0 group-hover:opacity-100" />
                  </div>
-             );
-        }
+                 
+                 {/* Tooltip showing width */}
+                 <div className="absolute top-0 mt-2 bg-indigo-600 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    {Math.round(trackWidth)}px
+                 </div>
+             </div>
+        );
 
         currentX += trackWidth;
 
-        // Render Gap Area
+        // 3. Gap Visualization
         if (i < cols.length - 1 && colGap > 0) {
-             els.push(
-                <div key={`c-gap-${i}`} className="absolute top-0 bottom-0 bg-yellow-400/10 hatch-pattern pointer-events-none border-l border-r border-transparent" style={{ left: lineLeft, width: colGap }} />
+             elements.push(
+                <div 
+                    key={`c-gap-${i}`} 
+                    className="absolute top-0 bottom-0 bg-yellow-400/10 hatch-pattern pointer-events-none border-l border-r border-transparent" 
+                    style={{ left: lineLeft, width: colGap }} 
+                />
              );
              currentX += colGap;
         }
-
-        return els;
-    });
+    }
+    return elements;
   };
 
-  // Render Horizontal Lines (Rows) - Visualization only, no resize yet
+  // Render Horizontal Lines (Rows) - Visualization only
   const renderHorizontalLines = () => {
     let currentY = paddingTop;
     return rows.map((trackHeight, i) => {
         const els = [];
         
-        // Track End Line
         const lineTop = currentY + trackHeight;
         
         els.push(
-            <div key={`r-line-${i}`} className="absolute left-0 right-0 border-b border-dashed border-indigo-400/50 pointer-events-none z-10" style={{ top: lineTop }} />
+            <div key={`r-line-${i}`} className="absolute left-0 right-0 border-b border-dashed border-indigo-400/30 pointer-events-none z-10" style={{ top: lineTop }} />
         );
         
         currentY += trackHeight;
@@ -217,14 +225,16 @@ export default function GridVisualizer({ iframeRef, overlayPos }: Props) {
             left: offsetX,
             width: width,
             height: height,
-            outline: '1px dashed rgba(99, 102, 241, 0.3)',
-            backgroundColor: 'rgba(99, 102, 241, 0.01)'
+            // Outline the whole grid container lightly
+            outline: '1px solid rgba(99, 102, 241, 0.2)',
         }}
     >
         {renderVerticalLines()}
         {renderHorizontalLines()}
-        <div className="absolute -top-5 left-0 bg-indigo-500 text-white text-[9px] px-1.5 py-0.5 rounded-t font-bold uppercase tracking-wider shadow-sm pointer-events-none">
-            Grid System
+        
+        {/* Grid Label Badge */}
+        <div className="absolute -top-5 left-0 bg-indigo-500 text-white text-[9px] px-1.5 py-0.5 rounded-t font-bold uppercase tracking-wider shadow-sm pointer-events-none flex items-center">
+            Grid
         </div>
     </div>
   );

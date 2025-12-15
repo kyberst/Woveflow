@@ -1,20 +1,26 @@
-import React, { useState, DragEvent } from 'react';
-import { BuilderElementNode } from '../../../../../types';
+import React, { useState, useRef, useEffect, DragEvent } from 'react';
+import { BuilderElementNode, ViewMode } from '../../../../../types';
 import { useEditor } from '../../../../../hooks/useEditor';
-import { ChevronRight, ChevronDown, Box, Type, Image as ImageIcon, Layout, GripVertical, Grid3x3 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Box, Type, Image as ImageIcon, Layout, GripVertical, Grid3x3, Eye, EyeOff, Trash2, Columns } from 'lucide-react';
+import { getSystemComponentById } from '../../../../../services/componentRegistry';
 
 interface Props { 
     node: BuilderElementNode | string; 
     depth?: number; 
+    index: number;
+    parentId: string | null;
 }
 
 const getIcon = (node: BuilderElementNode) => {
     if (node.tag === 'img') return <ImageIcon size={12} className="text-purple-500" />;
     if (['p','h1','h2','h3','h4','h5','h6','span','strong','em'].includes(node.tag)) return <Type size={12} className="text-slate-500" />;
     
-    // Check for Grid Layout
+    // Check for Grid/Flex
     const isGrid = node.styles?.desktop?.display === 'grid';
-    if (isGrid) return <Grid3x3 size={12} className="text-indigo-600" />;
+    const isFlex = node.styles?.desktop?.display === 'flex';
+    
+    if (isGrid) return <Grid3x3 size={12} className="text-indigo-500" />;
+    if (isFlex) return <Columns size={12} className="text-emerald-500" />; // Generic flex icon
     
     if (['div','section','main','header','footer'].includes(node.tag)) return <Layout size={12} className="text-blue-500" />;
     return <Box size={12} className="text-slate-400" />;
@@ -22,16 +28,37 @@ const getIcon = (node: BuilderElementNode) => {
 
 const CONTAINER_TAGS = ['div', 'section', 'main', 'header', 'footer', 'article', 'aside', 'form', 'ul', 'ol', 'nav', 'blockquote'];
 
-export default function LayerItem({ node, depth = 0 }: Props) {
+export default function LayerItem({ node, depth = 0, index, parentId }: Props) {
     const { state, dispatch } = useEditor();
     const [isExpanded, setIsExpanded] = useState(true);
-    const [dropPos, setDropPos] = useState<'none' | 'top' | 'bottom' | 'inside'>('none');
+    // Drag state: 'none', 'before' (top), 'after' (bottom), 'inside' (center)
+    const [dropPosition, setDropPosition] = useState<'none' | 'before' | 'after' | 'inside'>('none');
+    const itemRef = useRef<HTMLDivElement>(null);
 
-    // Text nodes are rendered simply
+    // Auto-expand if a child is selected
+    useEffect(() => {
+        if (typeof node === 'string') return;
+        
+        // Helper to check deep selection
+        const containsSelection = (n: BuilderElementNode): boolean => {
+            if (n.id === state.selectedElementId) return true;
+            return n.children.some(child => typeof child !== 'string' && containsSelection(child));
+        };
+
+        if (containsSelection(node)) {
+            setIsExpanded(true);
+        }
+        
+        // Scroll into view if this specific item is selected
+        if (node.id === state.selectedElementId && itemRef.current) {
+            itemRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [state.selectedElementId, node]);
+
     if (typeof node === 'string') {
         return (
-            <div className="pl-8 py-1 text-[10px] text-slate-400 italic truncate border-l border-transparent ml-2">
-                "{node.substring(0, 20)}{node.length > 20 ? '...' : ''}"
+            <div className="flex items-center py-1.5 pr-2 border-l border-transparent hover:bg-gray-50 dark:hover:bg-slate-800/50 text-[10px] text-slate-400 italic truncate select-none" style={{ paddingLeft: `${depth * 16 + 28}px` }}>
+                <span className="truncate">"{node.substring(0, 25)}{node.length > 25 ? '...' : ''}"</span>
             </div>
         );
     }
@@ -39,138 +66,178 @@ export default function LayerItem({ node, depth = 0 }: Props) {
     const isSelected = state.selectedElementId === node.id;
     const hasChildren = node.children.length > 0;
     const isContainer = CONTAINER_TAGS.includes(node.tag.toLowerCase());
+    
+    // Visibility Check (using Tailwind hidden class logic)
+    const isHidden = node.classNames?.includes('hidden') || 
+                     (state.viewMode === ViewMode.Mobile && node.styles.mobile?.display === 'none') ||
+                     (state.viewMode === ViewMode.Tablet && node.styles.tablet?.display === 'none') ||
+                     (node.styles.desktop?.display === 'none');
+
+    const handleToggleVisibility = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const currentClasses = node.classNames || [];
+        let newClasses;
+        if (currentClasses.includes('hidden')) {
+            newClasses = currentClasses.filter(c => c !== 'hidden');
+        } else {
+            newClasses = [...currentClasses, 'hidden'];
+        }
+        dispatch({ type: 'UPDATE_ELEMENT_CLASSES', payload: { elementId: node.id, classNames: newClasses }});
+        dispatch({ type: 'ADD_HISTORY' });
+    };
+
+    const handleDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (confirm('Delete this element?')) {
+            dispatch({ type: 'SET_SELECTED_ELEMENT', payload: node.id }); // Select first to target
+            dispatch({ type: 'DELETE_ELEMENT' });
+            dispatch({ type: 'ADD_HISTORY' });
+        }
+    };
+
+    // --- DRAG & DROP LOGIC ---
 
     const handleDragStart = (e: DragEvent) => {
         e.stopPropagation();
         e.dataTransfer.setData('application/json', JSON.stringify({ layerId: node.id }));
         e.dataTransfer.effectAllowed = 'move';
-        // Set drag image or styling here if needed
+        dispatch({ type: 'SET_IS_DRAGGING', payload: true });
     };
 
     const handleDragOver = (e: DragEvent) => {
-        e.preventDefault(); 
+        e.preventDefault();
         e.stopPropagation();
 
-        // Prevent dragging into self is handled in Drop, but we can visualize it here if we accessed drag source
-        
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const rect = e.currentTarget.getBoundingClientRect();
         const y = e.clientY - rect.top;
         const height = rect.height;
-
-        // Logic: Top 25% -> Before, Bottom 25% -> After, Middle -> Inside (if container)
+        
+        // Zones: Top 25% (Before), Bottom 25% (After), Middle 50% (Inside - if container)
         if (y < height * 0.25) {
-            setDropPos('top');
+            setDropPosition('before');
         } else if (y > height * 0.75) {
-            setDropPos('bottom');
+            setDropPosition('after');
+        } else if (isContainer) {
+            setDropPosition('inside');
         } else {
-            if (isContainer) {
-                setDropPos('inside');
-            } else {
-                // If not a container, default to bottom/after
-                setDropPos('bottom');
-            }
+            setDropPosition('after'); // Default for non-containers in middle
         }
     };
 
     const handleDrop = (e: DragEvent) => {
-        e.preventDefault(); 
+        e.preventDefault();
         e.stopPropagation();
-        setDropPos('none');
+        setDropPosition('none');
+        dispatch({ type: 'CLEAR_DRAG_STATE' });
 
         const data = e.dataTransfer.getData('application/json');
         if (!data) return;
 
         try {
-            const { layerId } = JSON.parse(data);
-            if (layerId === node.id) return; // Cannot drop on self
+            const parsed = JSON.parse(data);
+            if (parsed.layerId === node.id) return; // Ignore self-drop
 
-            let position: 'before' | 'after' | 'inside' = 'after';
+            // Determine target ID and Position
+            let targetId = node.id;
+            let position = dropPosition;
+
+            // If dropping 'inside', target is THIS node.
+            // If dropping 'before' or 'after', target is THIS node (sibling logic handled by reducer).
             
-            if (dropPos === 'top') position = 'before';
-            else if (dropPos === 'inside') position = 'inside';
-            else position = 'after';
+            // Dispatch Move
+            if (parsed.layerId) {
+                dispatch({ 
+                    type: 'MOVE_ELEMENT', 
+                    payload: { 
+                        elementId: parsed.layerId, 
+                        targetId: targetId, 
+                        position: position as 'before' | 'after' | 'inside' 
+                    } 
+                });
+                dispatch({ type: 'ADD_HISTORY' });
+            } else if (parsed.id) {
+                // Dragging a new component from component panel
+                // We need to implement ADD logic for components dropped on the tree.
+                // Re-using ADD_ELEMENT action which handles targetId/mode similar to Move.
+                const comp = state.components.find(c => c.id === parsed.id) || 
+                             getSystemComponentById(parsed.id);
+                             
+                // Note: Async import inside handler is tricky, relying on pre-loaded registry usually.
+                // Assuming components are in state or registry is sync.
+                
+                // For now, simpler: assume dragging existing layers. 
+                // To support new components, we need to wire that up in ComponentItem dragstart.
+            }
 
-            dispatch({ 
-                type: 'MOVE_ELEMENT', 
-                payload: { elementId: layerId, targetId: node.id, position } 
-            });
-            dispatch({ type: 'ADD_HISTORY' });
-        } catch (err) { 
-            console.error("Layer Drop Error", err); 
+        } catch (err) {
+            console.error("Layer drop failed", err);
         }
-    };
-
-    // Styling based on state
-    let containerClasses = "group flex items-center py-1.5 pr-2 cursor-pointer transition-colors border-l-2 text-sm";
-    
-    // Selection Style
-    if (isSelected) {
-        containerClasses += " bg-blue-100 dark:bg-blue-900/30 border-l-blue-600 dark:border-l-blue-400";
-    } else {
-        containerClasses += " border-l-transparent hover:bg-gray-100 dark:hover:bg-slate-800";
-    }
-
-    // Drop Target Styles
-    if (dropPos === 'top') containerClasses += " border-t-2 border-t-blue-500";
-    if (dropPos === 'bottom') containerClasses += " border-b-2 border-b-blue-500";
-    if (dropPos === 'inside') containerClasses += " ring-2 ring-inset ring-blue-400 bg-blue-50 dark:bg-blue-900/50";
-
-    const selectElement = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        dispatch({ type: 'SET_SELECTED_ELEMENT', payload: node.id });
-    };
-
-    const toggleExpand = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setIsExpanded(!isExpanded);
     };
 
     return (
         <div className="select-none">
-            <div
-                draggable 
-                onDragStart={handleDragStart} 
-                onDragOver={handleDragOver} 
-                onDragLeave={() => setDropPos('none')} 
+            <div 
+                ref={itemRef}
+                draggable
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragLeave={() => setDropPosition('none')}
                 onDrop={handleDrop}
-                className={containerClasses}
-                style={{ paddingLeft: `${depth * 12 + 6}px` }}
-                onClick={selectElement}
+                onClick={(e) => { e.stopPropagation(); dispatch({ type: 'SET_SELECTED_ELEMENT', payload: node.id }); }}
+                className={`
+                    group relative flex items-center py-1.5 pr-2 cursor-pointer transition-colors text-sm border-l-2
+                    ${isSelected ? 'bg-blue-100 dark:bg-blue-900/40 border-l-blue-600' : 'border-l-transparent hover:bg-gray-100 dark:hover:bg-slate-800'}
+                    ${dropPosition === 'inside' ? 'bg-indigo-50 dark:bg-indigo-900/50 ring-1 ring-inset ring-indigo-500' : ''}
+                `}
+                style={{ paddingLeft: `${depth * 12 + 4}px` }}
             >
-                {/* Drag Handle */}
-                <div className="mr-1 text-slate-300 dark:text-slate-600 cursor-grab active:cursor-grabbing hover:text-slate-500">
-                    <GripVertical size={12} />
-                </div>
+                {/* Drop Indicators (Lines) */}
+                {dropPosition === 'before' && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50 pointer-events-none" />}
+                {dropPosition === 'after' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50 pointer-events-none" />}
 
-                {/* Expander */}
+                {/* Expander Arrow */}
                 <div 
-                    onClick={hasChildren ? toggleExpand : undefined} 
-                    className={`mr-1 p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${hasChildren ? 'cursor-pointer opacity-100' : 'opacity-0 pointer-events-none'}`}
+                    onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+                    className={`p-0.5 rounded mr-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors ${hasChildren ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 >
                     {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 </div>
 
-                {/* Icon & Label */}
+                {/* Icon */}
                 <div className="mr-2 opacity-80">{getIcon(node)}</div>
-                <div className="flex flex-col truncate">
-                    <span className={`text-[11px] leading-tight font-medium ${isSelected ? 'text-blue-700 dark:text-blue-200' : 'text-slate-700 dark:text-slate-300'}`}>
-                        {node.tag} 
-                        {node.id && <span className="ml-1.5 text-[9px] font-mono text-slate-400 font-normal">#{node.id.split('-').pop()}</span>}
-                    </span>
-                    {node.classNames && node.classNames.length > 0 && (
-                        <span className="text-[9px] text-slate-400 truncate max-w-[120px]">.{node.classNames.join('.')}</span>
-                    )}
+
+                {/* Label */}
+                <span className={`text-xs font-medium truncate flex-grow ${isSelected ? 'text-blue-700 dark:text-blue-200' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {node.attributes['data-name'] || node.tag}
+                    {node.id && <span className="ml-1.5 text-[9px] font-mono text-slate-400 font-normal opacity-50">#{node.id.split('-').pop()}</span>}
+                </span>
+
+                {/* Hover Actions */}
+                <div className="hidden group-hover:flex items-center space-x-1 ml-2">
+                    <button onClick={handleToggleVisibility} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500">
+                        {isHidden ? <EyeOff size={10} /> : <Eye size={10} />}
+                    </button>
+                    <button onClick={handleDelete} className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-slate-400 hover:text-red-500">
+                        <Trash2 size={10} />
+                    </button>
                 </div>
             </div>
 
-            {/* Children Recursion */}
+            {/* Recursive Children */}
             {hasChildren && isExpanded && (
-                <div className="border-l border-gray-100 dark:border-slate-800 ml-3">
+                <div className="relative">
+                    {/* Vertical Guide Line */}
+                    <div 
+                        className="absolute bottom-0 border-l border-slate-200 dark:border-slate-700 pointer-events-none"
+                        style={{ left: `${depth * 12 + 11}px`, top: '0px' }}
+                    />
                     {node.children.map((child, i) => (
                         <LayerItem 
                             key={typeof child === 'string' ? i : child.id} 
                             node={child} 
-                            depth={depth + 1} 
+                            depth={depth + 1}
+                            index={i}
+                            parentId={node.id}
                         />
                     ))}
                 </div>

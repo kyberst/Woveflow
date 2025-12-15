@@ -14,22 +14,59 @@ export const useIframeDrop = () => {
     
     try {
       const parsed = JSON.parse(data);
-      const { targetId, mode } = state.dragOverState;
+      const { targetId, mode, activeCell } = state.dragOverState;
       
+      // Determine Styles if dropping into a grid cell
+      let placementStyles: any = {};
+      if (activeCell) {
+          placementStyles = {
+              gridColumnStart: activeCell.colIndex,
+              gridRowStart: activeCell.rowIndex,
+              // Optional: reset span to default 1 to avoid carrying over massive spans
+              gridColumnEnd: 'span 1', 
+              gridRowEnd: 'span 1'
+          };
+      }
+
       if (parsed.layerId) {
-           dispatch({ type: 'MOVE_ELEMENT', payload: { elementId: parsed.layerId, targetId, position: mode } });
+           // --- MOVE EXISTING ELEMENT ---
+           const payload: any = { 
+               elementId: parsed.layerId, 
+               targetId, 
+               position: mode 
+           };
+           
+           if (activeCell) {
+               payload.newStyles = placementStyles;
+               payload.viewMode = state.viewMode;
+           }
+
+           dispatch({ type: 'MOVE_ELEMENT', payload });
+
       } else if (parsed.id) {
-          // Check custom components first, then system components via Registry
+          // --- ADD NEW COMPONENT ---
           const customComp = state.components.find(c => c.id === parsed.id);
           const systemComp = getSystemComponentById(parsed.id);
           const comp = customComp || systemComp;
 
           if (comp) {
-              const content = typeof comp.content === 'string' 
+              let content = typeof comp.content === 'string' 
                   ? htmlToJson(comp.content as string)[0] 
                   : comp.content;
+              
+              // Deep copy
+              const element = JSON.parse(JSON.stringify(content));
 
-              dispatch({ type: 'ADD_ELEMENT', payload: { targetId, mode, element: JSON.parse(JSON.stringify(content)) } });
+              // Apply Grid Positioning if applicable
+              if (activeCell) {
+                  // Merge into existing desktop styles
+                  element.styles.desktop = {
+                      ...element.styles.desktop,
+                      ...placementStyles
+                  };
+              }
+
+              dispatch({ type: 'ADD_ELEMENT', payload: { targetId, mode, element } });
           }
       }
       dispatch({ type: 'ADD_HISTORY' });

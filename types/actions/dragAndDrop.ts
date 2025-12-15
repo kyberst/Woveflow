@@ -1,7 +1,6 @@
 import { DragOverState } from '../dragAndDrop';
 
 export type DragAndDropAction =
-  | { type: 'MOVE_ELEMENT'; payload: { elementId: string; targetId: string; position: 'before' | 'after' | 'inside' } }
   | { type: 'SET_IS_DRAGGING'; payload: boolean }
   | { type: 'SET_DRAG_OVER_STATE'; payload: DragOverState | null }
   | { type: 'CLEAR_DRAG_STATE' }

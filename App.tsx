@@ -1,58 +1,33 @@
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import EditorPage from './pages/EditorPage';
-import { useEditor } from './hooks/useEditor';
-import { Loader2 } from 'lucide-react';
-import './plugins'; // Initialize plugins on startup
+import { HashRouter } from 'react-router-dom';
+import AppRoutesView from './App/AppRoutes.view';
+import { useAppRoutes } from './App/useAppRoutes.hook';
+import { useEditor } from './hooks/useEditor'; // To access global state for error handling
 
-function AppRoutes() {
-  const { state, isLoading } = useEditor();
+export default function App() {
+  const { isLoading: editorLoading, error } = useEditor();
+  const { isLoading, defaultRedirect, noSitesAvailable } = useAppRoutes();
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen w-screen flex-col items-center justify-center bg-gray-50 dark:bg-slate-950 font-sans">
-        <div className="flex items-center space-x-3 text-builder-primary font-bold text-2xl mb-4">
-            <Loader2 className="w-10 h-10 animate-spin" />
-            <span className="tracking-tight">Woveflow</span>
-        </div>
-        <p className="text-slate-500 font-medium">Loading application data...</p>
-      </div>
-    );
-  }
-
-  // Handle case where initialization failed or no data exists
-  if (state.sites.length === 0) {
+  if (noSitesAvailable && !editorLoading) { // Check editorLoading to ensure the check happens after initialization
     return (
        <div className="flex h-screen w-screen items-center justify-center bg-gray-50 dark:bg-slate-950 text-slate-500">
-          <p>No sites available. System initialization failed.</p>
+          <p>No sites available. System initialization failed or no data.</p>
        </div>
     );
   }
 
-  // Calculate default route dynamically from loaded state
-  let defaultRedirect = '/';
-  const firstSite = state.sites[0];
-  const firstPage = state.pages.find(p => p.site === firstSite.id);
-  
-  if (firstSite && firstPage) {
-      defaultRedirect = `/editor/${firstSite.name}/${firstPage.id}`;
+  if (error) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center bg-red-50 text-red-700">
+        <h2 className="text-xl font-bold">Error</h2>
+        <p>{error}</p>
+      </div>
+    );
   }
 
   return (
-      <Routes>
-        <Route path="/editor/:site/:pageId" element={<EditorPage />} />
-        <Route 
-          path="*" 
-          element={<Navigate to={defaultRedirect} replace />} 
-        />
-      </Routes>
-  );
-}
-
-export default function App() {
-  return (
     <HashRouter>
-      <AppRoutes />
+      <AppRoutesView isLoading={isLoading} defaultRedirect={defaultRedirect} />
     </HashRouter>
   );
 }

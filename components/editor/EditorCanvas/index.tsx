@@ -1,7 +1,7 @@
 import React from 'react';
-import { useIframeBridge } from './IframeBridge/useIframeBridge.hook'; // Updated import path
 import EditorCanvasView from './EditorCanvas.view';
 import { useEditorCanvas } from './useEditorCanvas.hook';
+import { useIframeBridge } from './IframeBridge/useIframeBridge.hook';
 
 export default function EditorCanvas() {
   const iframeRef = useIframeBridge();
