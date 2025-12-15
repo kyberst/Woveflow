@@ -42,3 +42,12 @@
     transparent 10px
   );
 }
+
+/* Keyframes for pulsing line animation (used by drag-and-drop indicators) */
+@keyframes pulse-line {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+.animate-pulse-line {
+  animation: pulse-line 1.5s infinite ease-in-out;
+}

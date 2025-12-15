@@ -2,18 +2,9 @@ import React, { useState } from 'react';
 import { X, PackagePlus } from 'lucide-react';
 import { useEditor } from '../../../../hooks/useEditor';
 import { useTranslation } from 'react-i18next';
-import { BuilderElementNode, BuilderComponent } from '../../../../types';
-
-// Recursive function to find a node by ID
-const findNodeById = (nodes: (BuilderElementNode | string)[], id: string): BuilderElementNode | null => {
-    for (const node of nodes) {
-        if (typeof node === 'string') continue;
-        if (node.id === id) return node;
-        const found = findNodeById(node.children, id);
-        if (found) return found;
-    }
-    return null;
-};
+import { BuilderComponent } from '../../../../types';
+// Corrected import path for `findNode`
+import { findNode } from '../../../../utils/tree/index';
 
 interface Props {
   iframeRef: React.RefObject<HTMLIFrameElement>;
@@ -30,14 +21,14 @@ export default function SaveComponentModal({ iframeRef }: Props) {
     const currentPage = state.pages.find(p => p.id === state.currentPageId);
     if (!currentPage) return;
 
-    const elementNode = findNodeById(currentPage.content, state.selectedElementId);
+    const elementNode = findNode(currentPage.content, state.selectedElementId);
     
     if (elementNode) {
         const newComponent: BuilderComponent = {
             id: `custom-${Date.now()}`,
             name: name,
             category: 'custom',
-            content: JSON.parse(JSON.stringify(elementNode)), // Deep copy the node
+            content: JSON.parse(JSON.stringify(elementNode)), // Deep copy
             icon: 'star',
             owner: state.currentUser.id,
         };

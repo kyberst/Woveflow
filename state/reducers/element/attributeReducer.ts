@@ -1,5 +1,6 @@
 import { EditorState, Action, BuilderElementNode } from '../../../types';
-import { updateTree } from '../../../utils/tree';
+// Corrected import path for `updateTree`
+import { updateTree } from '../../../utils/tree/index';
 import * as db from '../../../services/surrealdbService';
 
 const updateCurrentPageContent = (state: EditorState, newContent: (BuilderElementNode | string)[]) => {

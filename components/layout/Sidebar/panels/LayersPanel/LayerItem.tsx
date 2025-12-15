@@ -179,6 +179,19 @@ export default function LayerItem({ node, depth = 0, index, parentId }: Props) {
         }
     };
 
+    const dropIndicatorClass = (pos: typeof dropPosition) => {
+        switch (pos) {
+          case 'before':
+            return 'absolute top-0 left-0 right-0 h-1 bg-blue-500 z-50 pointer-events-none animate-pulse-line';
+          case 'after':
+            return 'absolute bottom-0 left-0 right-0 h-1 bg-blue-500 z-50 pointer-events-none animate-pulse-line';
+          case 'inside':
+            return 'bg-blue-50 dark:bg-blue-900/40 ring-1 ring-inset ring-blue-500'; 
+          default:
+            return '';
+        }
+    };
+
     return (
         <div className="select-none">
             <div 
@@ -191,15 +204,18 @@ export default function LayerItem({ node, depth = 0, index, parentId }: Props) {
                 onClick={(e) => { e.stopPropagation(); dispatch({ type: 'SET_SELECTED_ELEMENT', payload: node.id }); }}
                 onContextMenu={(e) => { e.preventDefault(); dispatch({ type: 'SHOW_CONTEXT_MENU', payload: { x: e.clientX, y: e.clientY, elementId: node.id } }); }}
                 className={`
-                    group relative flex items-center py-1.5 pr-2 cursor-pointer transition-colors text-sm border-l-2
+                    group relative flex items-center py-1.5 pr-2 transition-colors text-sm border-l-2
                     ${isSelected ? 'bg-blue-100 dark:bg-blue-900/40 border-l-blue-600' : 'border-l-transparent hover:bg-gray-100 dark:hover:bg-slate-800'}
-                    ${dropPosition === 'inside' ? 'bg-indigo-50 dark:bg-indigo-900/50 ring-1 ring-inset ring-indigo-500' : ''}
+                    ${dropPosition === 'inside' ? dropIndicatorClass('inside') : ''}
+                    ${state.isDragging && state.selectedElementId === node.id ? 'opacity-50' : ''}
+                    cursor-grab active:cursor-grabbing
                 `}
                 style={{ paddingLeft: `${depth * 12 + 4}px` }}
+                data-element-id={node.id}
+                data-drop-position={dropPosition !== 'none' ? dropPosition : undefined}
             >
-                {/* Drop Indicators (Lines) */}
-                {dropPosition === 'before' && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50 pointer-events-none" />}
-                {dropPosition === 'after' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50 pointer-events-none" />}
+                {dropPosition === 'before' && <div className={dropIndicatorClass('before')} />}
+                {dropPosition === 'after' && <div className={dropIndicatorClass('after')} />}
 
                 {/* Expander Arrow */}
                 <div 

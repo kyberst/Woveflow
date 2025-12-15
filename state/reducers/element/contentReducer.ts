@@ -1,5 +1,6 @@
 import { EditorState, Action, BuilderElementNode } from '../../../types';
-import { updateTree } from '../../../utils/tree';
+// Corrected import path for `updateTree`
+import { updateTree } from '../../../utils/tree/index';
 import { htmlToJson } from '../../../utils/htmlToJson';
 import { validateNodeTree } from '../../../services/validationService';
 import * as db from '../../../services/surrealdbService';

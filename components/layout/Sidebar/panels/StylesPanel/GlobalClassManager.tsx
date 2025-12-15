@@ -3,18 +3,10 @@ import { useEditor } from '../../../../../hooks/useEditor';
 import { useTranslation } from 'react-i18next';
 import { Plus, Edit2, Sparkles } from 'lucide-react';
 import ClassEditModal from './ClassEditModal';
-import { GlobalClass, BuilderElementNode } from '../../../../../types';
+import { GlobalClass } from '../../../../../types';
 import { CSSProperties } from 'react';
-
-const findNodeById = (nodes: (BuilderElementNode | string)[], id: string): BuilderElementNode | null => {
-    for (const node of nodes) {
-        if (typeof node === 'string') continue;
-        if (node.id === id) return node;
-        const found = findNodeById(node.children, id);
-        if (found) return found;
-    }
-    return null;
-};
+// Corrected import path for `findNode`
+import { findNode } from '../../../../../utils/tree/index';
 
 export default function GlobalClassManager() {
   const { state } = useEditor();
@@ -27,7 +19,7 @@ export default function GlobalClassManager() {
     if (!state.selectedElementId) return null;
     const currentPage = state.pages.find(p => p.id === state.currentPageId);
     if (!currentPage) return null;
-    return findNodeById(currentPage.content, state.selectedElementId);
+    return findNode(currentPage.content, state.selectedElementId);
   }, [state.selectedElementId, state.pages, state.currentPageId]);
 
   const handleEdit = (cls: GlobalClass) => {

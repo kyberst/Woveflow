@@ -1,5 +1,6 @@
 import { EditorState, Action, BuilderElementNode } from '../../../types';
-import { transformTree, findNode, updateTree } from '../../../utils/tree';
+// Corrected import paths for `findNode`, `updateTree`, `removeNode`, and `insertNode`
+import { findNode, updateTree, removeNode, insertNode } from '../../../utils/tree/index';
 import * as db from '../../../services/surrealdbService';
 
 const updateCurrentPageContent = (state: EditorState, newContent: (BuilderElementNode | string)[]) => {
@@ -23,30 +24,15 @@ export const dragAndDropReducer = (state: EditorState, action: Action): EditorSt
             if (!nodeToMove) return state;
             if (findNode(nodeToMove.children, targetId)) return state; // Prevent moving into own child
             
-            // 1. Remove element from its original position
-            const afterRemoval = transformTree(currentPage.content, elementId, (siblings, i) => {
-                const newSiblings = [...siblings];
-                newSiblings.splice(i, 1);
-                return newSiblings;
-            });
+            // 1. Remove element from its original position (immutable)
+            const afterRemoval = removeNode(currentPage.content, elementId);
 
-            // 2. Insert element into its new position
-            let finalContent;
-            if (position === 'inside') {
-                 finalContent = updateTree(afterRemoval, targetId, (node) => ({ ...node, children: [...node.children, nodeToMove] }));
-            } else {
-                 finalContent = transformTree(afterRemoval, targetId, (siblings, i) => {
-                    const newSiblings = [...siblings];
-                    newSiblings.splice(position === 'before' ? i : i + 1, 0, nodeToMove);
-                    return newSiblings;
-                 });
-            }
-
+            // 2. Insert element into its new position (immutable)
+            let finalContent = insertNode(afterRemoval, targetId, position, nodeToMove as BuilderElementNode);
+            
             // 3. Apply new styles (e.g., Grid placement) if provided
             if (newStyles && viewMode) {
                 finalContent = updateTree(finalContent, elementId, (node) => {
-                    // We typically apply structure changes to desktop (base) or specific viewMode depending on requirement
-                    // For grid placement, it's often best to apply to the current viewMode override, or desktop if viewMode is desktop
                     const targetView = viewMode; 
                     const currentStyles = node.styles[targetView] || {};
                     

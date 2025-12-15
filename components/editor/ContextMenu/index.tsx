@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { useEditor } from '../../../hooks/useEditor';
 import { useTranslation } from 'react-i18next';
 import { Copy, Trash2, ClipboardPaste, PlusCircle, Grid3x3, Layout, Columns } from 'lucide-react';
-import { findParent } from '../../../utils/tree';
+// Corrected import path for `findParent`
+import { findParent } from '../../../utils/tree/index';
 import { ViewMode } from '../../../types';
 
 export default function ContextMenu() {

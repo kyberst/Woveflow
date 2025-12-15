@@ -1,18 +1,9 @@
 import React, { useMemo } from 'react';
 import { useEditor } from '../../../../../hooks/useEditor';
 import { useTranslation } from 'react-i18next';
-import { BuilderElementNode } from '../../../../../types';
 import { X } from 'lucide-react';
-
-const findNodeById = (nodes: (BuilderElementNode | string)[], id: string): BuilderElementNode | null => {
-  for (const node of nodes) {
-    if (typeof node === 'string') continue;
-    if (node.id === id) return node;
-    const found = findNodeById(node.children, id);
-    if (found) return found;
-  }
-  return null;
-};
+// Corrected import path for `findNode`
+import { findNode } from '../../../../../utils/tree/index';
 
 export default function AppliedClassesManager() {
   const { state, dispatch } = useEditor();
@@ -22,7 +13,7 @@ export default function AppliedClassesManager() {
   const selectedNode = useMemo(() => {
     if (!selectedElementId) return null;
     const currentPage = pages.find(p => p.id === currentPageId);
-    return currentPage ? findNodeById(currentPage.content, selectedElementId) : null;
+    return currentPage ? findNode(currentPage.content, selectedElementId) : null;
   }, [selectedElementId, pages, currentPageId]);
 
   const appliedClasses = selectedNode?.classNames || [];
@@ -59,7 +50,7 @@ export default function AppliedClassesManager() {
         className="w-full text-sm p-2 border rounded dark:bg-slate-800 dark:border-slate-600"
       >
         <option value="">Add a class...</option>
-        {globalClasses.filter(gc => !appliedClasses.includes(gc.name)).map(gc => (
+        {state.globalClasses.filter(gc => !appliedClasses.includes(gc.name)).map(gc => (
           <option key={gc.id} value={gc.name}>{gc.name}</option>
         ))}
       </select>

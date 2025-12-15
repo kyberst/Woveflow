@@ -1,5 +1,6 @@
 import { EditorState, Action, BuilderElementNode } from '../../../types';
-import { transformTree, findParent, cloneNodeWithNewIds } from '../../../utils/tree';
+// Corrected import paths for `transformTree`, `findParent`, `cloneNodeWithNewIds`, `removeNode`, and `insertNode`
+import { transformTree, findParent, cloneNodeWithNewIds, removeNode, insertNode } from '../../../utils/tree/index';
 import * as db from '../../../services/surrealdbService';
 
 const updateCurrentPageContent = (state: EditorState, newContent: (BuilderElementNode | string)[]) => {
@@ -18,23 +19,14 @@ export const structureReducer = (state: EditorState, action: Action): EditorStat
     switch (action.type) {
         case 'ADD_ELEMENT': {
             const { targetId, mode, element } = action.payload;
-            if (!targetId) return updateCurrentPageContent(state, [...currentPage.content, element]);
-            const newContent = transformTree(currentPage.content, targetId, (siblings, index) => {
-                const newSiblings = [...siblings];
-                if (mode === 'inside') {
-                    const targetNode = newSiblings[index];
-                    if (typeof targetNode !== 'string') newSiblings[index] = { ...targetNode, children: [...targetNode.children, element] };
-                } else if (mode === 'after') newSiblings.splice(index + 1, 0, element);
-                else if (mode === 'before') newSiblings.splice(index, 0, element);
-                return newSiblings;
-            });
+            const newContent = insertNode(currentPage.content, targetId, mode, element);
             return updateCurrentPageContent(state, newContent);
         }
         case 'MOVE_UP': {
             if (!state.selectedElementId) return state;
             const newContent = transformTree(currentPage.content, state.selectedElementId, (siblings, index) => {
                  if (index > 0) {
-                     const newSiblings = [...siblings];
+                     const newSiblings = [...siblings]; // Immutable copy
                      [newSiblings[index], newSiblings[index - 1]] = [newSiblings[index - 1], newSiblings[index]];
                      return newSiblings;
                  }
@@ -46,7 +38,7 @@ export const structureReducer = (state: EditorState, action: Action): EditorStat
             if (!state.selectedElementId) return state;
             const newContent = transformTree(currentPage.content, state.selectedElementId, (siblings, index) => {
                  if (index < siblings.length - 1) {
-                     const newSiblings = [...siblings];
+                     const newSiblings = [...siblings]; // Immutable copy
                      [newSiblings[index], newSiblings[index + 1]] = [newSiblings[index + 1], newSiblings[index]];
                      return newSiblings;
                  }
@@ -61,16 +53,12 @@ export const structureReducer = (state: EditorState, action: Action): EditorStat
         }
         case 'DELETE_ELEMENT': {
             if (!state.selectedElementId) return state;
-            const newContent = transformTree(currentPage.content, state.selectedElementId, (siblings, index) => {
-                const newSiblings = [...siblings];
-                newSiblings.splice(index, 1);
-                return newSiblings;
-            });
+            const newContent = removeNode(currentPage.content, state.selectedElementId);
             return { ...updateCurrentPageContent(state, newContent), selectedElementId: null };
         }
         case 'DUPLICATE_ELEMENT': {
             const newContent = transformTree(currentPage.content, action.payload, (siblings, index) => {
-                const newSiblings = [...siblings];
+                const newSiblings = [...siblings]; // Immutable copy
                 const originalNode = newSiblings[index];
                 newSiblings.splice(index + 1, 0, cloneNodeWithNewIds(originalNode));
                 return newSiblings;

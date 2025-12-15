@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useEditor } from '../../../../hooks/useEditor';
 import { generateAIContent } from '../../../../services/geminiService';
 import { jsonToHtml } from '../../../../utils/jsonToHtml';
-import { findNode } from '../../../../utils/tree'; // Corrected import to use findNode
+// Corrected import to use findNode from utils/tree/index
+import { findNode } from '../../../../utils/tree/index';
 import { ViewMode } from '../../../../types';
 
 export function useAIModal() {
